@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Strongsville Trailhead — Good News, Weekly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#153328;
+    --pine-light:#1f4a3a;
+    --cream:#F7F1E3;
+    --gold:#D9A441;
+    --rust:#B4472F;
+    --sage:#7C9A82;
+    --ink:#1B241E;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Source Sans 3', sans-serif;
+    line-height:1.55;
+  }
+  .post{
+    width:6px;
+    background:repeating-linear-gradient(180deg, var(--pine) 0 18px, var(--pine-light) 18px 36px);
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    top:0; bottom:0;
+    z-index:0;
+    opacity:0.15;
+  }
+  header{
+    background:var(--pine);
+    color:var(--cream);
+    padding:64px 24px 72px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute;
+    bottom:-1px; left:0; right:0;
+    height:28px;
+    background:var(--cream);
+    clip-path:polygon(0 100%, 3% 0, 6% 100%, 9% 0, 12% 100%, 15% 0, 18% 100%, 21% 0, 24% 100%, 27% 0, 30% 100%, 33% 0, 36% 100%, 39% 0, 42% 100%, 45% 0, 48% 100%, 51% 0, 54% 100%, 57% 0, 60% 100%, 63% 0, 66% 100%, 69% 0, 72% 100%, 75% 0, 78% 100%, 81% 0, 84% 100%, 87% 0, 90% 100%, 93% 0, 96% 100%, 99% 0, 100% 100%);
+  }
+  .eyebrow{
+    font-family:'Source Sans 3', sans-serif;
+    font-weight:700;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    font-size:.75rem;
+    color:var(--gold);
+    margin-bottom:18px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:clamp(2.4rem, 6vw, 4.2rem);
+    line-height:1.05;
+    max-width:780px;
+    margin:0 auto 20px;
+  }
+  h1 em{ color:var(--gold); font-style:normal; }
+  .sub{
+    max-width:520px;
+    margin:0 auto;
+    font-size:1.1rem;
+    color:#E6DFC9;
+  }
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+  .marker{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin:56px 0 24px;
+  }
+  .marker .badge{
+    flex-shrink:0;
+    width:44px; height:44px;
+    border-radius:50%;
+    background:var(--pine);
+    color:var(--gold);
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem;
+  }
+  .marker .rule{ flex:1; height:2px; background:var(--sage); opacity:.4; }
+  .marker h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.6rem;
+    white-space:nowrap;
+  }
+  .cards{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-bottom:8px;
+  }
+  @media (max-width:520px){ .cards{ grid-template-columns:1fr; } }
+  .card{
+    background:#fff;
+    border:1px solid rgba(21,51,40,.12);
+    border-radius:4px;
+    padding:20px;
+  }
+  .card .icon{ font-size:1.4rem; margin-bottom:8px; display:block; }
+  .card h3{
+    font-family:'Fraunces', serif;
+    font-size:1.05rem;
+    margin-bottom:6px;
+  }
+  .card p{ font-size:.92rem; color:#3d4a41; }
+  .signup-box{
+    margin:64px 0 24px;
+    background:var(--pine);
+    border-radius:6px;
+    padding:40px 32px;
+    text-align:center;
+    position:relative;
+  }
+  .signup-box h2{
+    font-family:'Fraunces', serif;
+    color:var(--cream);
+    font-size:1.7rem;
+    margin-bottom:10px;
+  }
+  .signup-box p{ color:#CBD8CC; font-size:.95rem; margin-bottom:24px; }
+  form{
+    display:flex;
+    gap:10px;
+    max-width:420px;
+    margin:0 auto;
+  }
+  @media (max-width:480px){ form{ flex-direction:column; } }
+  input[type=email]{
+    flex:1;
+    padding:14px 16px;
+    border-radius:4px;
+    border:none;
+    font-size:1rem;
+    font-family:'Source Sans 3', sans-serif;
+  }
+  button{
+    background:var(--gold);
+    color:var(--pine);
+    border:none;
+    padding:14px 22px;
+    border-radius:4px;
+    font-weight:700;
+    font-size:1rem;
+    cursor:pointer;
+    font-family:'Source Sans 3', sans-serif;
+    transition:transform .15s ease, background .15s ease;
+  }
+  button:hover{ background:#e8b756; transform:translateY(-1px); }
+  button:focus-visible, input:focus-visible{ outline:3px solid var(--rust); outline-offset:2px; }
+  #status{
+    margin-top:14px;
+    font-size:.9rem;
+    color:var(--gold);
+    min-height:20px;
+  }
+  footer{
+    text-align:center;
+    padding:40px 24px 64px;
+    font-size:.82rem;
+    color:#6b7469;
+  }
+  .stamp{
+    display:inline-block;
+    border:1.5px solid var(--rust);
+    color:var(--rust);
+    padding:2px 10px;
+    border-radius:3px;
+    font-weight:700;
+    font-size:.75rem;
+    letter-spacing:.08em;
+    transform:rotate(-3deg);
+    margin-bottom:8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Mile Marker 1 · Est. 2026</div>
+  <h1>The Strongsville <em>Trailhead</em></h1>
+  <p class="sub">One email, every Friday. Only the good stuff happening in our town — no traffic reports, no crime blotter, no doom.</p>
+</header>
+
+<main>
+
+  <div class="marker">
+    <div class="badge">1</div>
+    <h2>What's inside</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <span class="icon">🌳</span>
+      <h3>Community Wins</h3>
+      <p>Good things happening at work, in local business, and around the neighborhood.</p>
+    </div>
+    <div class="card">
+      <span class="icon">🧒</span>
+      <h3>Family & Kids Corner</h3>
+      <p>Free events, storytimes, and things worth doing with the little ones this week.</p>
+    </div>
+    <div class="card">
+      <span class="icon">🏞️</span>
+      <h3>Weekend Ideas</h3>
+      <p>A rotating pick from our parks and rec system — where to go, what's free.</p>
+    </div>
+    <div class="card">
+      <span class="icon">🎓</span>
+      <h3>Local Kids Doing Great Things</h3>
+      <p>Schools, sports, scouts, and student shoutouts from around Strongsville.</p>
+    </div>
+  </div>
+
+  <div class="marker">
+    <div class="badge">2</div>
+    <h2>Join the trail</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="signup-box">
+    <div class="stamp">Free, forever</div>
+    <h2>Get next Friday's issue</h2>
+    <p>Takes 10 seconds. One email a week. Unsubscribe any time.</p>
+    <form id="signupForm">
+      <input type="email" id="email" placeholder="you@example.com" required>
+      <button type="submit">Sign me up</button>
+    </form>
+    <div id="status"></div>
+  </div>
+
+  <div class="marker">
+    <div class="badge">3</div>
+    <h2>Spot something good?</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:40px;">
+    <span class="icon">👀</span>
+    <h3>Send us a tip</h3>
+    <p>See something good on a Strongsville Facebook group, at your kid's school, or around town? Forward it our way and it might make next week's issue.</p>
+    <p style="margin-top:12px;">
+      <a href="PASTE_YOUR_GOOGLE_FORM_URL_HERE" style="color:#B4472F; font-weight:700; text-decoration:none;">Submit a tip &rarr;</a>
+    </p>
+  </div>
+
+</main>
+
+<footer>
+  Made for neighbors, by neighbors, in Strongsville, OH.
+</footer>
+
+<script>
+  // Paste the Web App URL from your Google Apps Script deployment here.
+  const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+  const form = document.getElementById('signupForm');
+  const status = document.getElementById('status');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    status.textContent = "Signing you up...";
+
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      status.textContent = data.message || "Done!";
+      if (data.success) form.reset();
+    } catch (err) {
+      status.textContent = "Something went wrong — try again in a moment.";
+    }
+  });
+</script>
+
+</body>
+</html>
