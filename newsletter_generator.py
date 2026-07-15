@@ -71,8 +71,9 @@ def fetch_reader_tips():
     newsletter, since Facebook itself can't be scraped or fetched directly."""
     url = os.environ["APPS_SCRIPT_URL"]
     key = os.environ["APPS_SCRIPT_SECRET"]
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; StrongsvilleTrailhead/1.0)"}
     try:
-        resp = requests.get(url, params={"key": key, "type": "tips"}, timeout=30)
+        resp = requests.get(url, params={"key": key, "type": "tips"}, headers=headers, timeout=30, allow_redirects=True)
         data = resp.json()
         if not data.get("success"):
             print(f"  Warning: could not fetch tips ({data})")
@@ -239,8 +240,17 @@ def build_html(curated):
 def get_subscribers():
     url = os.environ["APPS_SCRIPT_URL"]
     key = os.environ["APPS_SCRIPT_SECRET"]
-    resp = requests.get(url, params={"key": key}, timeout=30)
-    data = resp.json()
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; StrongsvilleTrailhead/1.0)"}
+    resp = requests.get(url, params={"key": key}, headers=headers, timeout=30, allow_redirects=True)
+
+    print(f"  Subscriber fetch status code: {resp.status_code}")
+    try:
+        data = resp.json()
+    except requests.exceptions.JSONDecodeError:
+        print("  ERROR: response was not valid JSON. First 500 chars of response:")
+        print(resp.text[:500])
+        raise
+
     if not data.get("success"):
         raise RuntimeError(f"Failed to fetch subscribers: {data}")
     return data["emails"]
