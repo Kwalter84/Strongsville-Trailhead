@@ -191,7 +191,7 @@ def curate_with_claude(raw_items):
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=4000,
+        max_tokens=8000,
         messages=[{"role": "user", "content": prompt}],
     )
     text = response.content[0].text.strip()
