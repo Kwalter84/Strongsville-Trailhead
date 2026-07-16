@@ -34,9 +34,9 @@ from anthropic import Anthropic
 
 RSS_SOURCES = [
     # General Strongsville news
-    "https://news.google.com/rss/search?q=Strongsville+Ohio+when:9d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=Strongsville+Ohio+when:10d&hl=en-US&gl=US&ceid=US:en",
     # Explicitly family/kids/events angle
-    "https://news.google.com/rss/search?q=Strongsville+Ohio+(family+OR+kids+OR+event+OR+festival+OR+school)+when:9d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=Strongsville+Ohio+(family+OR+kids+OR+event+OR+festival+OR+school)+when:10d&hl=en-US&gl=US&ceid=US:en",
     # City of Strongsville official announcements
     "https://news.google.com/rss/search?q=site:strongsville.org+when:14d&hl=en-US&gl=US&ceid=US:en",
     # Strongsville City Schools
@@ -45,9 +45,21 @@ RSS_SOURCES = [
     "https://news.google.com/rss/search?q=(Cleveland+OR+%22Cuyahoga+County%22+OR+%22North+Olmsted%22+OR+%22Medina+Ohio%22+OR+%22Berea+Ohio%22+OR+%22Brunswick+Ohio%22)+(festival+OR+fair+OR+event+OR+%22open+this+weekend%22)+when:9d&hl=en-US&gl=US&ceid=US:en",
     # Kid-friendly / family video game news
     "https://news.google.com/rss/search?q=(%22family+friendly%22+OR+%22kids%22+OR+%22all+ages%22)+(video+game+OR+Nintendo+OR+%22new+game+release%22)+when:9d&hl=en-US&gl=US&ceid=US:en",
+    # Strongsville Patch
+    "https://news.google.com/rss/search?q=site:patch.com+Strongsville+when:14d&hl=en-US&gl=US&ceid=US:en",
+    # cleveland.com coverage of Strongsville
+    "https://news.google.com/rss/search?q=site:cleveland.com+Strongsville+when:14d&hl=en-US&gl=US&ceid=US:en",
+    # News 5 Cleveland (WEWS) coverage of Strongsville
+    "https://news.google.com/rss/search?q=site:news5cleveland.com+Strongsville+when:14d&hl=en-US&gl=US&ceid=US:en",
+    # Fox8 Cleveland coverage of Strongsville
+    "https://news.google.com/rss/search?q=site:fox8.com+Strongsville+when:14d&hl=en-US&gl=US&ceid=US:en",
+    # WKYC coverage of Strongsville
+    "https://news.google.com/rss/search?q=site:wkyc.com+Strongsville+when:14d&hl=en-US&gl=US&ceid=US:en",
+    # Strongsville Chamber of Commerce
+    "https://news.google.com/rss/search?q=%22Strongsville+Chamber%22+when:21d&hl=en-US&gl=US&ceid=US:en",
 ]
 
-MAX_ITEMS_TO_SEND_TO_CLAUDE = 65
+MAX_ITEMS_TO_SEND_TO_CLAUDE = 100
 
 
 FEED_HINTS = {
@@ -117,10 +129,16 @@ core audience.
 Below is a list of raw headlines/snippets pulled from news feeds covering Strongsville.
 
 Your job:
-1. SELECT only items that are genuinely positive, uplifting, or constructive local news,
-   OR relevant family/kids events happening in or very near Strongsville, OH.
-   REJECT: crime, accidents, political conflict, controversy, obituaries, complaints,
-   anything negative or divisive, and anything not actually about Strongsville/local area.
+1. SELECT items that are genuinely positive, uplifting, constructive, OR simply pleasant/neutral
+   local-interest news - for example a new business opening, a completed road or park project, an
+   upcoming event, a school achievement, a local sports win. You do NOT need a story to be dramatically
+   inspiring to include it - ordinary good local news counts (this is meant to feel like "here's
+   what's going on in town that's worth knowing," not just headline-grabbing feel-good stories).
+   REJECT: crime, accidents, political conflict/controversy, obituaries, complaints, lawsuits,
+   anything negative or divisive, and anything not actually about Strongsville/the local area
+   (except the day_trip_events and kids_gaming categories, which are intentionally broader - see below).
+   When in doubt about whether an item is "positive enough," err on the side of including it if it's
+   simply neutral/informative local news rather than negative.
 2. SORT each selected item into exactly one category:
    - "community_wins" (good things happening in town, volunteering, civic good news, local achievements)
    - "work_business" (local business openings, workforce/economic good news, job fairs)
