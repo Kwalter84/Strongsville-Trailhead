@@ -22,7 +22,7 @@
  *      You'll paste it into signup.html and into your GitHub secrets.
  */
 
-const SECRET_KEY = "CHANGE_ME_TO_A_RANDOM_STRING";
+const SECRET_KEY = "trailhead-strongsville-8k2m9x";";
 const SHEET_NAME = "Subscribers";
 const TIPS_SHEET_NAME = "Tips";
 
