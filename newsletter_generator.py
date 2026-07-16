@@ -19,6 +19,7 @@ Required environment variables (set as GitHub Actions secrets):
 
 import os
 import json
+import time
 import datetime
 import feedparser
 import requests
@@ -40,15 +41,25 @@ RSS_SOURCES = [
     "https://news.google.com/rss/search?q=site:strongsville.org+when:14d&hl=en-US&gl=US&ceid=US:en",
     # Strongsville City Schools
     "https://news.google.com/rss/search?q=%22Strongsville+City+Schools%22+when:14d&hl=en-US&gl=US&ceid=US:en",
+    # Regional day-trip-distance events (Greater Cleveland area, roughly 30-45 min drive)
+    "https://news.google.com/rss/search?q=(Cleveland+OR+%22Cuyahoga+County%22+OR+%22North+Olmsted%22+OR+%22Medina+Ohio%22+OR+%22Berea+Ohio%22+OR+%22Brunswick+Ohio%22)+(festival+OR+fair+OR+event+OR+%22open+this+weekend%22)+when:9d&hl=en-US&gl=US&ceid=US:en",
+    # Kid-friendly / family video game news
+    "https://news.google.com/rss/search?q=(%22family+friendly%22+OR+%22kids%22+OR+%22all+ages%22)+(video+game+OR+Nintendo+OR+%22new+game+release%22)+when:9d&hl=en-US&gl=US&ceid=US:en",
 ]
 
-MAX_ITEMS_TO_SEND_TO_CLAUDE = 45
+MAX_ITEMS_TO_SEND_TO_CLAUDE = 65
+
+
+FEED_HINTS = {
+    4: "regional_event",  # index of the day-trip-distance events feed above
+    5: "kids_gaming",     # index of the family/kids gaming feed above
+}
 
 
 def fetch_raw_items():
     items = []
     seen_links = set()
-    for url in RSS_SOURCES:
+    for idx, url in enumerate(RSS_SOURCES):
         feed = feedparser.parse(url)
         for entry in feed.entries:
             link = entry.get("link", "")
@@ -61,6 +72,7 @@ def fetch_raw_items():
                 "link": link,
                 "published": entry.get("published", ""),
                 "source": "rss",
+                "feed_hint": FEED_HINTS.get(idx, ""),
             })
     return items[:MAX_ITEMS_TO_SEND_TO_CLAUDE]
 
@@ -112,13 +124,23 @@ Your job:
 2. SORT each selected item into exactly one category:
    - "community_wins" (good things happening in town, volunteering, civic good news, local achievements)
    - "work_business" (local business openings, workforce/economic good news, job fairs)
-   - "family_kids" (specific events, activities, or things to do with kids/families)
+   - "family_kids" (specific events, activities, or things to do with kids/families IN Strongsville itself)
    - "school_youth" (student/school achievements, youth sports, scouts, etc.)
+   - "day_trip_events" (events, festivals, fairs, or things to do within roughly a 30-45 minute drive
+     of Strongsville - Greater Cleveland area, Medina, Berea, Brunswick, North Olmsted, etc. - worth a
+     family day trip, but NOT in Strongsville itself)
+   - "kids_gaming" (new video game releases, updates, or gaming news that's specifically family-friendly
+     or kid-appropriate - e.g. Nintendo, all-ages titles. REJECT anything violent, mature-rated, or not
+     genuinely kid-appropriate, even if it's popular)
+   Items with "feed_hint": "regional_event" are likely day_trip_events; items with
+   "feed_hint": "kids_gaming" are likely kids_gaming - but still use judgment, don't sort on the hint alone.
 3. For each selected item, write ONE clean, warm, plain-English sentence summary
    (do not copy the original headline verbatim - rewrite it in your own words).
    Items with "source": "reader_tip" came from a neighbor (often something they saw
    on a local Facebook group/Page) - treat these as trustworthy leads, but if the
    tip text is vague, still summarize only what's actually stated; don't invent details.
+   For "day_trip_events", briefly note roughly how far/what area it's in.
+   For "kids_gaming", briefly note the platform and why it's good for kids (age range if known).
 4. Also write 2-3 short original "Weekend Ideas for Young Families" suggestions —
    general, evergreen ideas for family activities in Strongsville
    (e.g. Cleveland Metroparks Mill Stream Run Reservation trails, SouthPark Mall play areas,
@@ -132,6 +154,8 @@ Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
   "work_business": [{"summary": "...", "link": "..."}],
   "family_kids": [{"summary": "...", "link": "..."}],
   "school_youth": [{"summary": "...", "link": "..."}],
+  "day_trip_events": [{"summary": "...", "link": "..."}],
+  "kids_gaming": [{"summary": "...", "link": "..."}],
   "weekend_ideas": ["...", "...", "..."]
 }
 
@@ -201,6 +225,8 @@ def build_html(curated):
         + render_section("Work & Local Business", "💼", curated.get("work_business", []))
         + render_section("Family & Kids Corner", "🧒", curated.get("family_kids", []))
         + render_section("School & Youth Achievements", "🎓", curated.get("school_youth", []))
+        + render_section("Worth the Drive — Day Trip Events", "🚗", curated.get("day_trip_events", []))
+        + render_section("Kids' Gaming Corner", "🎮", curated.get("kids_gaming", []))
     )
     weekend = render_weekend_ideas(curated.get("weekend_ideas", []))
 
@@ -241,19 +267,26 @@ def get_subscribers():
     url = os.environ["APPS_SCRIPT_URL"]
     key = os.environ["APPS_SCRIPT_SECRET"]
     headers = {"User-Agent": "Mozilla/5.0 (compatible; StrongsvilleTrailhead/1.0)"}
-    resp = requests.get(url, params={"key": key}, headers=headers, timeout=30, allow_redirects=True)
 
-    print(f"  Subscriber fetch status code: {resp.status_code}")
-    try:
-        data = resp.json()
-    except requests.exceptions.JSONDecodeError:
-        print("  ERROR: response was not valid JSON. First 500 chars of response:")
-        print(resp.text[:500])
-        raise
+    last_error = None
+    for attempt in range(3):
+        resp = requests.get(url, params={"key": key}, headers=headers, timeout=30, allow_redirects=True)
+        print(f"  Subscriber fetch attempt {attempt + 1} status code: {resp.status_code}")
+        try:
+            data = resp.json()
+            if data.get("success"):
+                return data["emails"]
+            last_error = RuntimeError(f"Failed to fetch subscribers: {data}")
+        except requests.exceptions.JSONDecodeError:
+            print("  Response was not valid JSON. First 300 chars:")
+            print(resp.text[:300])
+            last_error = RuntimeError("Apps Script returned non-JSON response")
 
-    if not data.get("success"):
-        raise RuntimeError(f"Failed to fetch subscribers: {data}")
-    return data["emails"]
+        if attempt < 2:
+            print("  Retrying in 5 seconds...")
+            time.sleep(5)
+
+    raise last_error
 
 
 # ---------------------------------------------------------------------------
