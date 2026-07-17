@@ -266,7 +266,17 @@ def build_html(curated):
     </table>
   </td></tr>
 
-  <tr><td style="padding:24px 32px; text-align:center; color:#6b7469; font-size:12px;">
+  <tr><td style="padding:20px 32px 0; text-align:center;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e7e0cf; padding-top:20px;">
+      <tr><td style="text-align:center; padding-top:20px;">
+        <p style="margin:0; font-size:13px; color:#6b7469;">This newsletter is brought to you by</p>
+        <p style="margin:4px 0 2px;"><a href="https://fixa.house" style="color:#B4472F; font-weight:700; font-size:15px; text-decoration:none;">Fixa House</a></p>
+        <p style="margin:0; font-size:12px; color:#6b7469; max-width:380px; margin-left:auto; margin-right:auto;">Free home repair cost estimates and a list of qualified Strongsville contractors, sent straight to your inbox.</p>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:12px 32px 24px; text-align:center; color:#6b7469; font-size:12px;">
     Made for neighbors, by neighbors, in Strongsville, OH.<br>
     You're getting this because you signed up at the Trailhead. Reply to unsubscribe.
   </td></tr>
