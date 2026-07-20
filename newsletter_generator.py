@@ -349,7 +349,7 @@ def build_html(curated):
     <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e7e0cf; padding-top:20px;">
       <tr><td style="text-align:center; padding-top:20px;">
         <p style="margin:0; font-size:13px; color:#6b7469;">This newsletter is brought to you by</p>
-        <p style="margin:4px 0 0;"><a href="https://leanhour.ai" style="color:#B4472F; font-weight:bold; font-size:16px; letter-spacing:1px; text-decoration:none;">LEANHOUR</a></p>
+        <p style="margin:4px 0 0;"><a href="https://leanhour.ai" style="color:#B4472F; font-weight:bold; font-size:16px; letter-spacing:0.5px; text-decoration:none;">Leanhour</a></p>
         <p style="margin:2px 0 8px; font-size:12px; color:#153328; font-weight:bold;">AI Solutions for Home &amp; Business</p>
         <p style="margin:0; font-size:12px; color:#6b7469; max-width:380px; margin-left:auto; margin-right:auto;">Helping Strongsville families and businesses save time and money with smart automation.</p>
       </td></tr>
