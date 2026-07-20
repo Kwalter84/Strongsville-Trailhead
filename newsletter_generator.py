@@ -57,6 +57,8 @@ RSS_SOURCES = [
     "https://news.google.com/rss/search?q=site:wkyc.com+Strongsville+when:14d&hl=en-US&gl=US&ceid=US:en",
     # Strongsville Chamber of Commerce
     "https://news.google.com/rss/search?q=%22Strongsville+Chamber%22+when:21d&hl=en-US&gl=US&ceid=US:en",
+    # Local health & wellness (Southwest General Hospital serves Strongsville, plus county health dept)
+    "https://news.google.com/rss/search?q=(%22Southwest+General%22+OR+%22Cuyahoga+County+Board+of+Health%22+OR+Strongsville)+(health+OR+wellness+OR+vaccine+OR+screening)+when:14d&hl=en-US&gl=US&ceid=US:en",
 ]
 
 MAX_ITEMS_TO_SEND_TO_CLAUDE = 100
@@ -150,6 +152,10 @@ Your job:
    - "kids_gaming" (new video game releases, updates, or gaming news that's specifically family-friendly
      or kid-appropriate - e.g. Nintendo, all-ages titles. REJECT anything violent, mature-rated, or not
      genuinely kid-appropriate, even if it's popular)
+   - "health_wellness" (local health news - hospital programs, vaccine/screening clinics, health
+     department announcements - OR, if nothing local is available this week, general evergreen
+     health and wellness tips you write yourself. UNLIKE every other category, this one should NEVER
+     be left empty - see instruction 5 below.)
    Items with "feed_hint": "regional_event" are likely day_trip_events; items with
    "feed_hint": "kids_gaming" are likely kids_gaming - but still use judgment, don't sort on the hint alone.
 3. For each selected item, write ONE clean, warm, plain-English sentence summary
@@ -165,6 +171,14 @@ Your job:
    Strongsville branch library storytimes, Ehrnfelt Recreation Center, local splash pads/parks)
    appropriate for the current season. These should NOT be copied from any source - write
    them yourself as genuinely useful local suggestions.
+5. For "health_wellness": first check if there are genuine local health items (hospital programs,
+   vaccine clinics, health department news) among the raw items - use those if present. If there
+   are none this week, write 2-3 general, evergreen, seasonally-appropriate wellness tips YOURSELF
+   (e.g. hydration and sun safety in summer, flu shot reminders in fall, cold/flu prevention basics
+   in winter, seasonal allergy tips in spring). Keep these general and non-medical - practical
+   everyday wellness reminders, NOT specific medical, dosage, or treatment advice. Always include
+   a brief note that readers should consult their own doctor for personal health questions. This
+   category should always have at least 2 items, generated if nothing local is available.
 
 Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
 {
@@ -174,6 +188,7 @@ Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
   "school_youth": [{"summary": "...", "link": "..."}],
   "day_trip_events": [{"summary": "...", "link": "..."}],
   "kids_gaming": [{"summary": "...", "link": "..."}],
+  "health_wellness": [{"summary": "...", "link": "..."}],
   "weekend_ideas": ["...", "...", "..."]
 }
 
@@ -203,35 +218,83 @@ def curate_with_claude(raw_items):
 # 3. RENDER HTML EMAIL
 # ---------------------------------------------------------------------------
 
+SECTION_TINTS = {
+    "Community Wins": "#F3F7F1",
+    "Work & Local Business": "#FDF6EC",
+    "Family & Kids Corner": "#FBF0EC",
+    "School & Youth Achievements": "#EFF4F6",
+    "Worth the Drive — Day Trip Events": "#F6F1F8",
+    "Kids' Gaming Corner": "#F0F5FB",
+    "Health & Wellness": "#EEF7F2",
+}
+
+SECTION_ACCENTS = {
+    "Community Wins": "#5B8266",
+    "Work & Local Business": "#C98A3B",
+    "Family & Kids Corner": "#B4472F",
+    "School & Youth Achievements": "#3E7A8C",
+    "Worth the Drive — Day Trip Events": "#7A5A96",
+    "Kids' Gaming Corner": "#3E6EA8",
+    "Health & Wellness": "#2F9E6E",
+}
+
+
 def render_section(title, emoji, items):
     if not items:
         return ""
+    tint = SECTION_TINTS.get(title, "#F7F1E3")
+    accent = SECTION_ACCENTS.get(title, "#153328")
     rows = ""
     for item in items:
         link = item.get("link", "")
+        button = f"""<a href="{link}" style="display:inline-block; margin-top:10px; padding:6px 14px; background:#ffffff; border:1.5px solid {accent}; color:{accent}; font-size:12px; font-weight:bold; text-decoration:none; border-radius:20px;">Read more &rarr;</a>""" if link else ""
         rows += f"""
         <tr>
-          <td style="padding:14px 0; border-bottom:1px solid #e7e0cf;">
-            <p style="margin:0; font-size:15px; color:#1B241E; line-height:1.5;">{item['summary']}</p>
-            {f'<a href="{link}" style="font-size:13px; color:#B4472F; text-decoration:none;">Read more &rarr;</a>' if link else ''}
+          <td style="padding:16px 20px; border-bottom:1px solid rgba(21,51,40,0.08);">
+            <p style="margin:0 0 4px; font-size:15px; color:#1B241E; line-height:1.55;">{item['summary']}</p>
+            {button}
           </td>
         </tr>"""
     return f"""
-    <tr><td style="padding:32px 0 8px;">
-      <p style="margin:0; font-family:Georgia, serif; font-size:20px; font-weight:700; color:#153328;">{emoji} {title}</p>
+    <tr><td style="padding:28px 0 0;">
+      <table cellpadding="0" cellspacing="0"><tr>
+        <td style="width:38px; height:38px; background:#ffffff; border:2px solid {accent}; border-radius:19px; text-align:center; vertical-align:middle; font-size:17px;">{emoji}</td>
+        <td style="padding-left:12px; vertical-align:middle;">
+          <p style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#153328;">{title}</p>
+        </td>
+      </tr></table>
     </td></tr>
-    <tr><td><table width="100%" cellpadding="0" cellspacing="0">{rows}</table></td></tr>
+    <tr><td style="padding-top:12px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:{tint}; border-radius:8px; border-left:4px solid {accent}; overflow:hidden;">{rows}</table>
+    </td></tr>
+    """
+
+
+def render_divider():
+    return """
+    <tr><td style="padding:28px 0; text-align:center;">
+      <span style="color:#D9A441; font-size:14px; letter-spacing:8px;">&#8226;&#8226;&#8226;</span>
+    </td></tr>
     """
 
 
 def render_weekend_ideas(ideas):
     if not ideas:
         return ""
-    lis = "".join(f'<li style="margin-bottom:8px; color:#1B241E; font-size:15px;">{idea}</li>' for idea in ideas)
+    lis = "".join(
+        f"""<tr><td style="padding:6px 0 6px 24px; vertical-align:top; width:28px; font-size:16px;">🏞️</td>
+             <td style="padding:6px 24px 6px 0; color:#F1EAD8; font-size:14.5px; line-height:1.55;">{idea}</td></tr>"""
+        for idea in ideas
+    )
     return f"""
-    <tr><td style="padding:24px 24px; background:#EFE9D8; border-radius:6px;">
-      <p style="margin:0 0 10px; font-family:Georgia, serif; font-size:18px; font-weight:700; color:#153328;">🏞️ Weekend Ideas for Young Families</p>
-      <ul style="padding-left:20px; margin:0;">{lis}</ul>
+    <tr><td style="padding-top:8px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#153328; border-radius:8px;">
+        <tr><td style="padding:22px 24px 4px;" colspan="2">
+          <p style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:18px; font-weight:bold; color:#D9A441;">Weekend Ideas for Young Families</p>
+        </td></tr>
+        {lis}
+        <tr><td colspan="2" style="height:14px; line-height:14px;">&nbsp;</td></tr>
+      </table>
     </td></tr>
     """
 
@@ -245,38 +308,55 @@ def build_html(curated):
         + render_section("School & Youth Achievements", "🎓", curated.get("school_youth", []))
         + render_section("Worth the Drive — Day Trip Events", "🚗", curated.get("day_trip_events", []))
         + render_section("Kids' Gaming Corner", "🎮", curated.get("kids_gaming", []))
+        + render_section("Health & Wellness", "💚", curated.get("health_wellness", []))
     )
     weekend = render_weekend_ideas(curated.get("weekend_ideas", []))
 
     return f"""<!DOCTYPE html>
-<html><body style="margin:0; padding:0; background:#F7F1E3; font-family:'Source Sans Pro', Arial, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F1E3;">
+<html><body style="margin:0; padding:0; background:#EFE7D2; font-family:'Trebuchet MS', Verdana, Geneva, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#EFE7D2;">
 <tr><td align="center" style="padding:40px 16px;">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%;">
 
-  <tr><td style="background:#153328; padding:36px 32px; border-radius:6px 6px 0 0; text-align:center;">
-    <p style="margin:0 0 6px; color:#D9A441; letter-spacing:2px; font-size:11px; font-weight:700; text-transform:uppercase;">The Strongsville Trailhead</p>
-    <p style="margin:0; color:#F7F1E3; font-size:14px;">{date_str} &middot; Good news only</p>
-  </td></tr>
-
-  <tr><td style="background:#ffffff; padding:8px 32px 32px;">
-    <table width="100%" cellpadding="0" cellspacing="0">
-      {sections}
-      {weekend}
-    </table>
-  </td></tr>
-
-  <tr><td style="padding:20px 32px 0; text-align:center;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e7e0cf; padding-top:20px;">
-      <tr><td style="text-align:center; padding-top:20px;">
-        <p style="margin:0; font-size:13px; color:#6b7469;">This newsletter is brought to you by</p>
-        <p style="margin:4px 0 2px;"><a href="https://fixa.house" style="color:#B4472F; font-weight:700; font-size:15px; text-decoration:none;">Fixa House</a></p>
-        <p style="margin:0; font-size:12px; color:#6b7469; max-width:380px; margin-left:auto; margin-right:auto;">Free home repair cost estimates and a list of qualified Strongsville contractors, sent straight to your inbox.</p>
+  <tr><td style="background:#0F281F; padding:6px 6px 0; border-radius:10px 10px 0 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:2px solid #D9A441; border-bottom:none; border-radius:8px 8px 0 0;">
+      <tr><td style="padding:32px 32px 30px; text-align:center;">
+        <!-- LOGO SLOT: replace src below with your hosted logo image URL once you have permission to use it.
+             Recommended size: roughly 70px tall. Leave the <img> tag out entirely (delete this whole <tr>)
+             if you don't want a logo here. -->
+        <!-- <img src="PASTE_LOGO_URL_HERE" alt="City of Strongsville" style="height:56px; margin-bottom:16px;"> -->
+        <p style="margin:0 0 10px; color:#D9A441; letter-spacing:5px; font-size:11px; font-weight:bold; text-transform:uppercase; font-family:'Trebuchet MS', Verdana, sans-serif;">&#8213;&#8213;&#8213; MILE MARKER 1 &#8213;&#8213;&#8213;</p>
+        <p style="margin:0; color:#F7F1E3; font-size:34px; font-weight:bold; font-family:Georgia, 'Times New Roman', serif; letter-spacing:0.5px;">The Strongsville<br><span style="color:#D9A441; font-style:italic;">Trailhead</span></p>
+        <p style="margin:14px auto 0; color:#CBD8CC; font-size:13.5px; line-height:1.5; max-width:380px;">Good, helpful, family-oriented news for Strongsville residents — local wins, kids' events, school achievements, and things worth knowing about your town, every Friday.</p>
+        <table cellpadding="0" cellspacing="0" style="margin:16px auto 0;"><tr>
+          <td style="background:rgba(217,164,65,0.15); border:1px solid #D9A441; border-radius:20px; padding:6px 18px;">
+            <p style="margin:0; color:#D9A441; font-size:12px; font-weight:bold; letter-spacing:1px;">{date_str} &nbsp;&middot;&nbsp; GOOD NEWS ONLY</p>
+          </td>
+        </tr></table>
       </td></tr>
     </table>
   </td></tr>
 
-  <tr><td style="padding:12px 32px 24px; text-align:center; color:#6b7469; font-size:12px;">
+  <tr><td style="background:#ffffff; padding:8px 32px 20px; border-left:2px solid #D9A441; border-right:2px solid #D9A441;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      {sections}
+      {render_divider() if sections and weekend else ""}
+      {weekend}
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:20px 32px 0; text-align:center; border-left:2px solid #D9A441; border-right:2px solid #D9A441;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e7e0cf; padding-top:20px;">
+      <tr><td style="text-align:center; padding-top:20px;">
+        <p style="margin:0; font-size:13px; color:#6b7469;">This newsletter is brought to you by</p>
+        <p style="margin:4px 0 0;"><a href="https://leanhour.ai" style="color:#B4472F; font-weight:bold; font-size:16px; letter-spacing:1px; text-decoration:none;">LEANHOUR</a></p>
+        <p style="margin:2px 0 8px; font-size:12px; color:#153328; font-weight:bold;">AI Solutions for Home &amp; Business</p>
+        <p style="margin:0; font-size:12px; color:#6b7469; max-width:380px; margin-left:auto; margin-right:auto;">Helping Strongsville families and businesses save time and money with smart automation.</p>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:12px 32px 24px; text-align:center; color:#6b7469; font-size:12px; border:2px solid #D9A441; border-top:none; border-radius:0 0 8px 8px;">
     Made for neighbors, by neighbors, in Strongsville, OH.<br>
     You're getting this because you signed up at the Trailhead. Reply to unsubscribe.
   </td></tr>
