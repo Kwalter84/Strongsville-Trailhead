@@ -5,7 +5,12 @@ on:
     # Runs every Friday at 8:00 AM US Eastern (12:00 UTC covers EST;
     # adjust if you want to account for daylight saving precisely)
     - cron: "0 12 * * 5"
-  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab to test
+  workflow_dispatch:
+    inputs:
+      test_email:
+        description: 'Optional: send ONLY to this email instead of the full subscriber list (leave blank for a normal run)'
+        required: false
+        type: string
 
 jobs:
   send-newsletter:
@@ -29,6 +34,7 @@ jobs:
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
           APPS_SCRIPT_SECRET: ${{ secrets.APPS_SCRIPT_SECRET }}
+          TEST_EMAIL: ${{ github.event.inputs.test_email }}
         run: python -u newsletter_generator.py
 
       - name: Upload issue as artifact (for review)
