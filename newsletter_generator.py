@@ -1,5 +1,5 @@
 
-Newsletter generator · PY
+
 """
 STRONGSVILLE TRAILHEAD NEWSLETTER — weekly generator + sender
 ---------------------------------------------------------------
