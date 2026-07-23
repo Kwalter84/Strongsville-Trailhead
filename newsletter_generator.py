@@ -1,3 +1,5 @@
+
+Newsletter generator · PY
 """
 STRONGSVILLE TRAILHEAD NEWSLETTER — weekly generator + sender
 ---------------------------------------------------------------
@@ -8,7 +10,7 @@ Run weekly (via GitHub Actions cron). This script:
   3. Renders a branded HTML email
   4. Fetches the subscriber list from the Google Apps Script backend
   5. Sends the issue via SendGrid
-
+ 
 Required environment variables (set as GitHub Actions secrets):
   ANTHROPIC_API_KEY   - Claude API key
   SENDGRID_API_KEY    - SendGrid API key
@@ -16,7 +18,7 @@ Required environment variables (set as GitHub Actions secrets):
   APPS_SCRIPT_URL      - your deployed Google Apps Script Web App URL
   APPS_SCRIPT_SECRET   - the SECRET_KEY you set in Code.gs
 """
-
+ 
 import os
 import json
 import time
@@ -24,14 +26,14 @@ import datetime
 import feedparser
 import requests
 from anthropic import Anthropic
-
+ 
 # ---------------------------------------------------------------------------
 # 1. SOURCES
 # ---------------------------------------------------------------------------
 # Google News RSS search is the most reliable way to get fresh, indexed
 # stories about Strongsville without depending on any one outlet's own feed
 # (many local outlets don't maintain working RSS feeds).
-
+ 
 RSS_SOURCES = [
     # General Strongsville news
     "https://news.google.com/rss/search?q=Strongsville+Ohio+when:10d&hl=en-US&gl=US&ceid=US:en",
@@ -60,16 +62,16 @@ RSS_SOURCES = [
     # Local health & wellness (Southwest General Hospital serves Strongsville, plus county health dept)
     "https://news.google.com/rss/search?q=(%22Southwest+General%22+OR+%22Cuyahoga+County+Board+of+Health%22+OR+Strongsville)+(health+OR+wellness+OR+vaccine+OR+screening)+when:14d&hl=en-US&gl=US&ceid=US:en",
 ]
-
+ 
 MAX_ITEMS_TO_SEND_TO_CLAUDE = 100
-
-
+ 
+ 
 FEED_HINTS = {
     4: "regional_event",  # index of the day-trip-distance events feed above
     5: "kids_gaming",     # index of the family/kids gaming feed above
 }
-
-
+ 
+ 
 def fetch_raw_items():
     items = []
     seen_links = set()
@@ -89,8 +91,8 @@ def fetch_raw_items():
                 "feed_hint": FEED_HINTS.get(idx, ""),
             })
     return items[:MAX_ITEMS_TO_SEND_TO_CLAUDE]
-
-
+ 
+ 
 def fetch_reader_tips():
     """Reader-submitted tips (via the Google Form linked to the Tips sheet).
     This is how things people see on Facebook groups/Pages make it into the
@@ -117,19 +119,19 @@ def fetch_reader_tips():
     except Exception as e:
         print(f"  Warning: tips fetch failed ({e})")
         return []
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # 2. CLAUDE: FILTER + CATEGORIZE + WRITE
 # ---------------------------------------------------------------------------
-
+ 
 CURATION_PROMPT = """You are curating a weekly community newsletter called "The Strongsville Trailhead"
 for residents of Strongsville, Ohio. The newsletter's entire purpose is to be a genuinely
 positive, uplifting counterpoint to normal local news. Families with young kids are a
 core audience.
-
+ 
 Below is a list of raw headlines/snippets pulled from news feeds covering Strongsville.
-
+ 
 Your job:
 1. SELECT items that are genuinely positive, uplifting, constructive, OR simply pleasant/neutral
    local-interest news - for example a new business opening, a completed road or park project, an
@@ -179,7 +181,7 @@ Your job:
    everyday wellness reminders, NOT specific medical, dosage, or treatment advice. Always include
    a brief note that readers should consult their own doctor for personal health questions. This
    category should always have at least 2 items, generated if nothing local is available.
-
+ 
 Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
 {
   "community_wins": [{"summary": "...", "link": "..."}],
@@ -191,19 +193,19 @@ Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
   "health_wellness": [{"summary": "...", "link": "..."}],
   "weekend_ideas": ["...", "...", "..."]
 }
-
+ 
 If a category has no genuinely good items this week, return an empty array for it - never
 force in something negative or unrelated just to fill a section.
-
+ 
 RAW ITEMS:
 {items_json}
 """
-
-
+ 
+ 
 def curate_with_claude(raw_items):
     client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     prompt = CURATION_PROMPT.replace("{items_json}", json.dumps(raw_items, indent=2))
-
+ 
     response = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=8000,
@@ -212,12 +214,12 @@ def curate_with_claude(raw_items):
     text = response.content[0].text.strip()
     text = text.replace("```json", "").replace("```", "").strip()
     return json.loads(text)
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # 3. RENDER HTML EMAIL
 # ---------------------------------------------------------------------------
-
+ 
 SECTION_TINTS = {
     "Community Wins": "#F3F7F1",
     "Work & Local Business": "#FDF6EC",
@@ -227,7 +229,7 @@ SECTION_TINTS = {
     "Kids' Gaming Corner": "#F0F5FB",
     "Health & Wellness": "#EEF7F2",
 }
-
+ 
 SECTION_ACCENTS = {
     "Community Wins": "#5B8266",
     "Work & Local Business": "#C98A3B",
@@ -237,8 +239,8 @@ SECTION_ACCENTS = {
     "Kids' Gaming Corner": "#3E6EA8",
     "Health & Wellness": "#2F9E6E",
 }
-
-
+ 
+ 
 def render_section(title, emoji, items):
     if not items:
         return ""
@@ -268,16 +270,16 @@ def render_section(title, emoji, items):
       <table width="100%" cellpadding="0" cellspacing="0" style="background:{tint}; border-radius:8px; border-left:4px solid {accent}; overflow:hidden;">{rows}</table>
     </td></tr>
     """
-
-
+ 
+ 
 def render_divider():
     return """
     <tr><td style="padding:28px 0; text-align:center;">
       <span style="color:#D9A441; font-size:14px; letter-spacing:8px;">&#8226;&#8226;&#8226;</span>
     </td></tr>
     """
-
-
+ 
+ 
 def render_weekend_ideas(ideas):
     if not ideas:
         return ""
@@ -297,8 +299,8 @@ def render_weekend_ideas(ideas):
       </table>
     </td></tr>
     """
-
-
+ 
+ 
 def build_html(curated):
     date_str = datetime.date.today().strftime("%B %d, %Y")
     sections = (
@@ -311,13 +313,13 @@ def build_html(curated):
         + render_section("Health & Wellness", "💚", curated.get("health_wellness", []))
     )
     weekend = render_weekend_ideas(curated.get("weekend_ideas", []))
-
+ 
     return f"""<!DOCTYPE html>
 <html><body style="margin:0; padding:0; background:#EFE7D2; font-family:'Trebuchet MS', Verdana, Geneva, sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#EFE7D2;">
 <tr><td align="center" style="padding:40px 16px;">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%;">
-
+ 
   <tr><td style="background:#0F281F; padding:6px 6px 0; border-radius:10px 10px 0 0;">
     <table width="100%" cellpadding="0" cellspacing="0" style="border:2px solid #D9A441; border-bottom:none; border-radius:8px 8px 0 0;">
       <tr><td style="padding:32px 32px 30px; text-align:center;">
@@ -336,7 +338,7 @@ def build_html(curated):
       </td></tr>
     </table>
   </td></tr>
-
+ 
   <tr><td style="background:#ffffff; padding:8px 32px 20px; border-left:2px solid #D9A441; border-right:2px solid #D9A441;">
     <table width="100%" cellpadding="0" cellspacing="0">
       {sections}
@@ -344,7 +346,7 @@ def build_html(curated):
       {weekend}
     </table>
   </td></tr>
-
+ 
   <tr><td style="padding:20px 32px 0; text-align:center; border-left:2px solid #D9A441; border-right:2px solid #D9A441;">
     <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e7e0cf; padding-top:20px;">
       <tr><td style="text-align:center; padding-top:20px;">
@@ -355,28 +357,28 @@ def build_html(curated):
       </td></tr>
     </table>
   </td></tr>
-
+ 
   <tr><td style="padding:12px 32px 24px; text-align:center; color:#6b7469; font-size:12px; border:2px solid #D9A441; border-top:none; border-radius:0 0 8px 8px;">
     Made for neighbors, by neighbors, in Strongsville, OH.<br>
     Questions or feedback? Email us at <a href="mailto:strongsvilletrailhead@gmail.com" style="color:#6b7469; text-decoration:underline;">strongsvilletrailhead@gmail.com</a><br>
     You're getting this because you signed up at the Trailhead. Reply to unsubscribe.
   </td></tr>
-
+ 
 </table>
 </td></tr>
 </table>
 </body></html>"""
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # 4. SUBSCRIBERS
 # ---------------------------------------------------------------------------
-
+ 
 def get_subscribers():
     url = os.environ["APPS_SCRIPT_URL"]
     key = os.environ["APPS_SCRIPT_SECRET"]
     headers = {"User-Agent": "Mozilla/5.0 (compatible; StrongsvilleTrailhead/1.0)"}
-
+ 
     last_error = None
     for attempt in range(3):
         resp = requests.get(url, params={"key": key}, headers=headers, timeout=30, allow_redirects=True)
@@ -390,27 +392,27 @@ def get_subscribers():
             print("  Response was not valid JSON. First 300 chars:")
             print(resp.text[:300])
             last_error = RuntimeError("Apps Script returned non-JSON response")
-
+ 
         if attempt < 2:
             print("  Retrying in 5 seconds...")
             time.sleep(5)
-
+ 
     raise last_error
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # 5. SEND VIA SENDGRID
 # ---------------------------------------------------------------------------
-
+ 
 def send_newsletter(html, subscribers):
     api_key = os.environ["SENDGRID_API_KEY"]
     sender = os.environ["SENDER_EMAIL"]
     subject = f"The Strongsville Trailhead — {datetime.date.today().strftime('%B %d, %Y')}"
-
+ 
     if not subscribers:
         print("No subscribers yet — skipping send.")
         return
-
+ 
     payload = {
         "personalizations": [{"to": [{"email": email}]} for email in subscribers],
         "from": {"email": sender, "name": "The Strongsville Trailhead"},
@@ -429,42 +431,51 @@ def send_newsletter(html, subscribers):
     if resp.status_code >= 300:
         print(resp.text)
         resp.raise_for_status()
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------
-
+ 
 def main():
     print("Fetching raw local news items...")
     raw_items = fetch_raw_items()
     print(f"  {len(raw_items)} raw items pulled from RSS")
-
+ 
     print("Fetching reader-submitted tips...")
     tips = fetch_reader_tips()
     print(f"  {len(tips)} reader tips pulled")
     raw_items += tips
-
+ 
     print("Curating with Claude...")
     curated = curate_with_claude(raw_items)
     total = sum(len(v) for k, v in curated.items() if k != "weekend_ideas")
     print(f"  {total} items selected as genuinely positive")
-
+ 
     print("Building HTML...")
     html = build_html(curated)
-
+ 
     # Save a local copy for review/debugging every run
     with open("latest_issue.html", "w") as f:
         f.write(html)
-
+ 
     print("Fetching subscriber list...")
     subscribers = get_subscribers()
     print(f"  {len(subscribers)} subscribers")
-
+ 
+    test_email = os.environ.get("TEST_EMAIL", "").strip()
+    if test_email:
+        print(f"  TEST MODE: overriding recipient list - sending ONLY to {test_email} (not the real {len(subscribers)} subscribers)")
+        subscribers = [test_email]
+ 
     print("Sending...")
     send_newsletter(html, subscribers)
     print("Done.")
-
-
+ 
+ 
 if __name__ == "__main__":
     main()
+ 
+
+
+
