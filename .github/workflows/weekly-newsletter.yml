@@ -2,9 +2,10 @@ name: Weekly Strongsville Newsletter
 
 on:
   schedule:
-    # Runs every Friday at 8:00 AM US Eastern (12:00 UTC covers EST;
-    # adjust if you want to account for daylight saving precisely)
-    - cron: "0 12 * * 5"
+    # Runs every Friday at approximately 8:00 AM US Eastern (12:07 UTC covers EST).
+    # Deliberately offset 7 minutes past the hour - GitHub Actions scheduled runs
+    # get delayed most often at exactly the top of the hour due to high demand.
+    - cron: "7 12 * * 5"
   workflow_dispatch:
     inputs:
       test_email:
