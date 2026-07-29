@@ -59,6 +59,8 @@ RSS_SOURCES = [
     "https://news.google.com/rss/search?q=%22Strongsville+Chamber%22+when:21d&hl=en-US&gl=US&ceid=US:en",
     # Local health & wellness (Southwest General Hospital serves Strongsville, plus county health dept)
     "https://news.google.com/rss/search?q=(%22Southwest+General%22+OR+%22Cuyahoga+County+Board+of+Health%22+OR+Strongsville)+(health+OR+wellness+OR+vaccine+OR+screening)+when:14d&hl=en-US&gl=US&ceid=US:en",
+    # Local hiring news: job fairs, notable part-time/seasonal openings, "now hiring" press mentions
+    "https://news.google.com/rss/search?q=(Strongsville+OR+%22North+Olmsted%22+OR+%22Berea+Ohio%22+OR+%22Cuyahoga+County%22)+(%22job+fair%22+OR+%22now+hiring%22+OR+%22part-time%22+OR+%22seasonal+hiring%22)+when:14d&hl=en-US&gl=US&ceid=US:en",
 ]
 
 MAX_ITEMS_TO_SEND_TO_CLAUDE = 100
@@ -156,6 +158,14 @@ Your job:
      department announcements - OR, if nothing local is available this week, general evergreen
      health and wellness tips you write yourself. UNLIKE every other category, this one should NEVER
      be left empty - see instruction 5 below.)
+   - "jobs_work" (REAL, SOURCED local hiring news ONLY - job fairs, notable part-time/seasonal openings,
+     "now hiring" announcements, work-from-home trend coverage, from the actual raw items provided.
+     CRITICAL: unlike health_wellness or weekend_ideas, NEVER invent or generate a job listing,
+     employer name, or opening yourself under any circumstances - a fabricated job listing could
+     cause real harm if someone tried to apply to it. If there are no genuine job-related items
+     among the raw items this week, return an empty array. An empty jobs_work section is the
+     CORRECT and expected outcome most weeks - do not stretch an unrelated business story into a
+     fake "hiring" claim just to fill this category.
    Items with "feed_hint": "regional_event" are likely day_trip_events; items with
    "feed_hint": "kids_gaming" are likely kids_gaming - but still use judgment, don't sort on the hint alone.
 3. For each selected item, write ONE clean, warm, plain-English sentence summary
@@ -194,6 +204,13 @@ Your job:
    Write these yourself - do NOT copy from any source, and do not name specific unverified discount
    percentages, expiration dates, or promo codes you're not certain of. Do not recommend any specific
    coupon-code website. Keep it practical and generally applicable, not tied to one store's current sale.
+   Output each tip as {"summary": "...", "link": "..."} to match other categories. For the "link":
+   ONLY include one if the tip names a real, well-known organization with a stable, well-known
+   homepage you are highly confident actually exists (e.g. "https://www.thredup.com", "https://
+   www.kidizen.com", the Cuyahoga County Public Library's actual site). NEVER invent, guess, or
+   construct a URL - if you are not certain a URL is correct, leave "link" as an empty string.
+   A missing link is fine and expected for general advice tips; a fabricated or guessed link is not
+   acceptable under any circumstances.
 
 Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
 {
@@ -204,8 +221,9 @@ Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
   "day_trip_events": [{"summary": "...", "link": "..."}],
   "kids_gaming": [{"summary": "...", "link": "..."}],
   "health_wellness": [{"summary": "...", "link": "..."}],
+  "jobs_work": [{"summary": "...", "link": "..."}],
   "weekend_ideas": ["...", "...", "..."],
-  "savings_tips": ["...", "...", "..."]
+  "savings_tips": [{"summary": "...", "link": "..."}]
 }
 
 If a category has no genuinely good items this week, return an empty array for it - never
@@ -242,6 +260,8 @@ SECTION_TINTS = {
     "Worth the Drive — Day Trip Events": "#F6F1F8",
     "Kids' Gaming Corner": "#F0F5FB",
     "Health & Wellness": "#EEF7F2",
+    "Jobs & Work Opportunities": "#F5F3EE",
+    "Money-Saving Tips for Families": "#FBEFD6",
 }
 
 SECTION_ACCENTS = {
@@ -252,6 +272,8 @@ SECTION_ACCENTS = {
     "Worth the Drive — Day Trip Events": "#7A5A96",
     "Kids' Gaming Corner": "#3E6EA8",
     "Health & Wellness": "#2F9E6E",
+    "Jobs & Work Opportunities": "#6B5B3E",
+    "Money-Saving Tips for Families": "#B8860B",
 }
 
 
@@ -315,26 +337,6 @@ def render_weekend_ideas(ideas):
     """
 
 
-def render_savings_tips(tips):
-    if not tips:
-        return ""
-    lis = "".join(
-        f"""<tr><td style="padding:6px 0 6px 24px; vertical-align:top; width:28px; font-size:16px;">&#128176;</td>
-             <td style="padding:6px 24px 6px 0; color:#3D2E12; font-size:14.5px; line-height:1.55;">{tip}</td></tr>"""
-        for tip in tips
-    )
-    return f"""
-    <tr><td style="padding-top:16px;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:#FBEFD6; border:1.5px solid #D9A441; border-radius:8px;">
-        <tr><td style="padding:22px 24px 4px;" colspan="2">
-          <p style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:18px; font-weight:bold; color:#8A5A16;">Money-Saving Tips for Families</p>
-        </td></tr>
-        {lis}
-        <tr><td colspan="2" style="height:14px; line-height:14px;">&nbsp;</td></tr>
-      </table>
-    </td></tr>
-    """
-
 
 def build_html(curated):
     date_str = datetime.date.today().strftime("%B %d, %Y")
@@ -346,9 +348,10 @@ def build_html(curated):
         + render_section("Worth the Drive — Day Trip Events", "🚗", curated.get("day_trip_events", []))
         + render_section("Kids' Gaming Corner", "🎮", curated.get("kids_gaming", []))
         + render_section("Health & Wellness", "💚", curated.get("health_wellness", []))
+        + render_section("Jobs & Work Opportunities", "💵", curated.get("jobs_work", []))
+        + render_section("Money-Saving Tips for Families", "💰", curated.get("savings_tips", []))
     )
     weekend = render_weekend_ideas(curated.get("weekend_ideas", []))
-    savings = render_savings_tips(curated.get("savings_tips", []))
 
     return f"""<!DOCTYPE html>
 <html><body style="margin:0; padding:0; background:#EFE7D2; font-family:'Trebuchet MS', Verdana, Geneva, sans-serif;">
@@ -380,7 +383,6 @@ def build_html(curated):
       {sections}
       {render_divider() if sections and weekend else ""}
       {weekend}
-      {savings}
     </table>
   </td></tr>
 
