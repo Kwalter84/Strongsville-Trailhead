@@ -61,6 +61,10 @@ RSS_SOURCES = [
     "https://news.google.com/rss/search?q=(%22Southwest+General%22+OR+%22Cuyahoga+County+Board+of+Health%22+OR+Strongsville)+(health+OR+wellness+OR+vaccine+OR+screening)+when:14d&hl=en-US&gl=US&ceid=US:en",
     # Local hiring news: job fairs, notable part-time/seasonal openings, "now hiring" press mentions
     "https://news.google.com/rss/search?q=(Strongsville+OR+%22North+Olmsted%22+OR+%22Berea+Ohio%22+OR+%22Cuyahoga+County%22)+(%22job+fair%22+OR+%22now+hiring%22+OR+%22part-time%22+OR+%22seasonal+hiring%22)+when:14d&hl=en-US&gl=US&ceid=US:en",
+    # Strongsville Mustangs athletics site - team news, records, tournament results
+    # (this content often doesn't get indexed as general "news" via the district-name search above)
+    "https://news.google.com/rss/search?q=site:strongsvillemustangs.org+when:14d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=site:strongsvilleathletics.org+when:14d&hl=en-US&gl=US&ceid=US:en",
 ]
 
 MAX_ITEMS_TO_SEND_TO_CLAUDE = 100
