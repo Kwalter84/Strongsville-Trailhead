@@ -64,6 +64,11 @@ RSS_SOURCES = [
     # Note: strongsvillemustangs.org / strongsvilleathletics.org (team achievement highlights)
     # were tried here but Google News does not index that site at all - confirmed empty results
     # regardless of date window. That content comes in via the tip form/Sheet instead.
+    # Real sales/deals on kids' and family items - local/regional retailers, plus national/online
+    # sales news (e.g. major back-to-school sale announcements, big-box retailer kids' clothing
+    # promotions). This feeds real, sourced deals into Money-Saving Tips instead of only generic advice.
+    "https://news.google.com/rss/search?q=(%22back+to+school+sale%22+OR+%22kids+clothing+sale%22+OR+%22baby+deals%22+OR+%22toy+sale%22)+when:10d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=(Cleveland+OR+Ohio+OR+Strongsville)+(sale+OR+deal+OR+discount)+(kids+OR+children+OR+baby+OR+%22back+to+school%22)+when:10d&hl=en-US&gl=US&ceid=US:en",
 ]
 
 MAX_ITEMS_TO_SEND_TO_CLAUDE = 100
@@ -215,28 +220,34 @@ Your job:
    everyday wellness reminders, NOT specific medical, dosage, or treatment advice. Always include
    a brief note that readers should consult their own doctor for personal health questions. This
    category should always have at least 2 items, generated if nothing local is available.
-6. Also write 3-4 short original "Money-Saving Tips for Families" - general, evergreen, practical
-   savings ideas for a family with young kids, appropriate for the current season. Draw from a MIX of:
-   - Local/regional: library museum-pass lending programs, free/reduced-admission days at attractions
-     in Strongsville AND surrounding Greater Cleveland communities (Medina, Berea, North Olmsted,
-     Brunswick, etc.), grocery store loyalty/fuel-points programs available in the area, swapping
-     kids' outgrown clothes/gear with other local families
-   - General online deals especially useful for parents of young children: secondhand kids'
-     clothing/gear marketplaces and apps (e.g. ThredUp Kids, Kidizen, local Buy Nothing groups),
-     timing bigger purchases around major annual sale events (Prime Day, Black Friday/Cyber Monday,
-     end-of-season clearance for clothing/gear), diaper or baby-product subscription discount
-     programs, cash-back browser extensions/apps, buying kids' clothes a size up during off-season
-     clearance
-   Write these yourself - do NOT copy from any source, and do not name specific unverified discount
-   percentages, expiration dates, or promo codes you're not certain of. Do not recommend any specific
-   coupon-code website. Keep it practical and generally applicable, not tied to one store's current sale.
-   Output each tip as {"summary": "...", "link": "..."} to match other categories. For the "link":
-   ONLY include one if the tip names a real, well-known organization with a stable, well-known
-   homepage you are highly confident actually exists (e.g. "https://www.thredup.com", "https://
-   www.kidizen.com", the Cuyahoga County Public Library's actual site). NEVER invent, guess, or
-   construct a URL - if you are not certain a URL is correct, leave "link" as an empty string.
-   A missing link is fine and expected for general advice tips; a fabricated or guessed link is not
-   acceptable under any circumstances.
+6. Write 3-4 "Money-Saving Tips for Families" - a MIX prioritized in this order:
+   a) FIRST PRIORITY - REAL sourced deals: check the raw items for genuine current sales, discounts,
+      or promotions on kids'/family items - local Strongsville-area retailers, regional (Greater
+      Cleveland), or national/online retailers (e.g. a real back-to-school clothing sale, a real
+      toy/baby-product promotion). If you find genuine sourced deals like this, USE THEM and lead
+      with them - cite only the specific details (discount amount, dates, retailer name) that are
+      ACTUALLY STATED in the source item. Do not round up, embellish, or add specifics not present
+      in the source.
+   b) SECOND PRIORITY - if fewer than 3-4 genuine sourced deals are available this week (this will
+      be common some weeks), fill remaining slots with general evergreen savings advice you write
+      yourself: library museum-pass lending programs, free/reduced-admission days at attractions in
+      Strongsville and surrounding communities (Medina, Berea, North Olmsted, Brunswick), grocery
+      loyalty/fuel-points programs, swapping outgrown kids' clothes/gear with local families,
+      secondhand kids' clothing/gear marketplaces and apps (ThredUp Kids, Kidizen, Buy Nothing
+      groups), timing purchases around major annual sale events (Prime Day, Black Friday/Cyber
+      Monday), diaper/baby-product subscription discounts, cash-back browser extensions, buying
+      kids' clothes a size up during off-season clearance.
+   For (a) real sourced deals: NEVER invent or embellish a discount percentage, expiration date, or
+   promo code beyond what the source item actually states - if the source is vague, keep your
+   summary equally general rather than inventing precision.
+   For (b) general advice: do NOT copy from any source, and do not name specific unverified discount
+   percentages, expiration dates, or promo codes. Do not recommend any specific coupon-code website.
+   Output each tip as {"summary": "...", "link": "..."}. For the "link": include the real source link
+   for (a) sourced deals, or ONLY a real, well-known, stable homepage for (b) general advice tips that
+   name an actual organization (e.g. "https://www.thredup.com", the Cuyahoga County Public Library's
+   actual site). NEVER invent, guess, or construct a URL - if you are not certain a URL is correct,
+   leave "link" as an empty string. A missing link is fine and expected; a fabricated or guessed
+   link is not acceptable under any circumstances.
 7. EDITOR'S NOTE: write a short, warm 2-3 sentence note from "the editor" that opens the issue.
    It should feel personal and specific to THIS week - reference 1-2 of the actual top stories by
    name so it doubles as a preview, not a generic greeting. Casual, warm, like a neighbor giving you
@@ -248,9 +259,8 @@ Your job:
    entirely from its regular category array below - it should NOT appear twice in the newsletter.
    If a week is genuinely thin on strong material, it's fine to choose fewer than 3, but 3 is the
    target most weeks given the number of sources feeding this newsletter.
-9. CLOSING CTA: write ONE single short sentence encouraging readers to either reply with a tip, or
-   forward the newsletter to a neighbor - pick whichever fits the week better. Only ONE call to
-   action, not multiple competing asks.
+9. Note: the newsletter has a fixed "Forward to a Friend" section at the end that you do NOT need
+   to generate - that's handled separately, not part of your output.
 
 Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
 {
@@ -265,8 +275,7 @@ Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
   "health_wellness": [{"summary": "...", "link": "..."}],
   "jobs_work": [{"summary": "...", "link": "..."}],
   "weekend_ideas": ["...", "...", "..."],
-  "savings_tips": [{"summary": "...", "link": "..."}],
-  "closing_cta": "..."
+  "savings_tips": [{"summary": "...", "link": "..."}]
 }
 
 If a category has no genuinely good items this week, return an empty array for it - never
@@ -469,15 +478,16 @@ def render_top3(items):
     """
 
 
-def render_closing_cta(cta_text):
-    if not cta_text:
-        return ""
+def render_forward_section():
+    signup_url = "https://profound-monstera-22797f.netlify.app/signup.html"
     return f"""
     <tr><td style="padding-top:8px;">
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#FBF0EC; border-radius:8px; border:1.5px solid #B4472F;">
-        <tr><td style="padding:20px 24px; text-align:center;">
-          <p style="margin:0; font-size:15px; color:#7A2E1E; font-weight:bold; line-height:1.5;">{cta_text}</p>
-          <p style="margin:6px 0 0; font-size:12px; color:#8A5045;">Just hit reply — a real person reads these.</p>
+        <tr><td style="padding:24px 24px; text-align:center;">
+          <p style="margin:0 0 4px; font-family:Georgia, 'Times New Roman', serif; font-size:18px; font-weight:bold; color:#7A2E1E;">Forward to a Friend or Neighbor</p>
+          <a href="{signup_url}" style="display:inline-block; margin:10px 0 16px; padding:10px 22px; background:#B4472F; color:#F7F1E3; font-size:13px; font-weight:bold; text-decoration:none; border-radius:20px; font-family:'Liberation Sans', Arial, sans-serif;">Sign Up for The Trailhead &rarr;</a>
+          <p style="margin:0; font-size:13.5px; color:#7A2E1E; line-height:1.55;">If you spotted something positive happening in Strongsville this week that we missed, reply and let us know — your tips make this newsletter better for everyone!</p>
+          <p style="margin:8px 0 0; font-size:12px; color:#8A5045;">Just hit reply — a real person reads these.</p>
         </td></tr>
       </table>
     </td></tr>
@@ -500,7 +510,7 @@ def build_html(curated):
         + render_section("Money-Saving Tips for Families", "💰", curated.get("savings_tips", []))
     )
     weekend = render_weekend_ideas(curated.get("weekend_ideas", []))
-    closing_cta = render_closing_cta(curated.get("closing_cta", ""))
+    forward_section = render_forward_section()
 
     return f"""<!DOCTYPE html>
 <html><body style="margin:0; padding:0; background:#EFE7D2; font-family:'Trebuchet MS', Verdana, Geneva, sans-serif;">
@@ -535,8 +545,8 @@ def build_html(curated):
       {sections}
       {render_divider() if sections and weekend else ""}
       {weekend}
-      {render_divider() if weekend and closing_cta else ""}
-      {closing_cta}
+      {render_divider() if weekend else ""}
+      {forward_section}
     </table>
   </td></tr>
 
