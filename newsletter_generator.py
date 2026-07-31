@@ -148,19 +148,26 @@ Your job:
    simply neutral/informative local news rather than negative.
 2. SORT each selected item into exactly one category:
    - "community_wins" (good things happening in town, volunteering, civic good news, local achievements)
-   - "work_business" (local business openings, workforce/economic good news, job fairs)
+   - "work_business" (local business openings, workforce/economic good news - NOT job fairs, those go
+     in jobs_work only)
    - "family_kids" (specific events, activities, or things to do with kids/families IN Strongsville itself)
-   - "school_youth" (student/school achievements, youth sports, scouts, etc.)
+   - "school_youth" (student/school ACHIEVEMENTS specifically - wins, awards, competitions. Routine
+     schedule postings for multiple sports should be merged into ONE brief item, not listed separately
+     per sport - schedules being posted is minor logistics, not really an achievement, so keep it short)
    - "day_trip_events" (events, festivals, fairs, or things to do within roughly a 30-45 minute drive
      of Strongsville - Greater Cleveland area, Medina, Berea, Brunswick, North Olmsted, etc. - worth a
-     family day trip, but NOT in Strongsville itself)
+     family day trip, but NOT in Strongsville itself. CRITICAL: if an item is a job fair or hiring event,
+     it goes in jobs_work ONLY, even if it's also at a fun family destination - do not put the same
+     event in both day_trip_events and jobs_work.)
    - "kids_gaming" (new video game releases, updates, or gaming news that's specifically family-friendly
      or kid-appropriate - e.g. Nintendo, all-ages titles. REJECT anything violent, mature-rated, or not
      genuinely kid-appropriate, even if it's popular)
    - "health_wellness" (local health news - hospital programs, vaccine/screening clinics, health
      department announcements - OR, if nothing local is available this week, general evergreen
      health and wellness tips you write yourself. UNLIKE every other category, this one should NEVER
-     be left empty - see instruction 5 below.)
+     be left empty - see instruction 5 below. If multiple items are from the same source about related
+     topics (e.g. two hospital talks in the same month), merge them into ONE item rather than listing
+     separately.)
    - "jobs_work" (REAL, SOURCED local hiring news ONLY - job fairs, notable part-time/seasonal openings,
      "now hiring" announcements, work-from-home trend coverage, from the actual raw items provided.
      CRITICAL: unlike health_wellness or weekend_ideas, NEVER invent or generate a job listing,
@@ -168,9 +175,25 @@ Your job:
      cause real harm if someone tried to apply to it. If there are no genuine job-related items
      among the raw items this week, return an empty array. An empty jobs_work section is the
      CORRECT and expected outcome most weeks - do not stretch an unrelated business story into a
-     fake "hiring" claim just to fill this category.
+     fake "hiring" claim just to fill this category. This is the ONLY category a job fair should
+     appear in, even if it's also a fun destination worth a day trip.
    Items with "feed_hint": "regional_event" are likely day_trip_events; items with
    "feed_hint": "kids_gaming" are likely kids_gaming - but still use judgment, don't sort on the hint alone.
+2a. QUALITY BAR - this newsletter should feel tightly curated, not exhaustive. Actively CUT or MERGE:
+   - Vague PR/promotional statements with no concrete news (e.g. a generic "the mayor highlighted our
+     growth" statement with no specific project or number attached) - cut these entirely
+   - Minor administrative/operational notices (e.g. a payment-method policy change) - cut unless
+     genuinely useful and timely
+   - Generic regional listicles with low Strongsville-specificity (e.g. "things to do in Cleveland this
+     weekend" roundups that aren't focused on Strongsville) - cut unless nothing better is available
+   - Businesses or events that aren't actually in or near Strongsville despite showing up in the
+     search results (e.g. a store opening in a distant suburb) - cut
+   - Near-duplicate items covering the same theme (e.g. three separate library craft-night posts, or
+     two hospital health talks) - MERGE into ONE combined item rather than listing each separately
+   CAP each of community_wins, work_business, family_kids, day_trip_events at a MAXIMUM of 4 items each,
+   even if more raw items would qualify - pick the strongest, most concrete, most Strongsville-specific
+   ones. school_youth, health_wellness, and jobs_work can be shorter (1-3 items) since they're naturally
+   smaller categories some weeks.
 3. For each selected item, write ONE clean, warm, plain-English sentence summary
    (do not copy the original headline verbatim - rewrite it in your own words).
    Items with "source": "reader_tip" came from a neighbor (often something they saw
@@ -214,9 +237,25 @@ Your job:
    construct a URL - if you are not certain a URL is correct, leave "link" as an empty string.
    A missing link is fine and expected for general advice tips; a fabricated or guessed link is not
    acceptable under any circumstances.
+7. EDITOR'S NOTE: write a short, warm 2-3 sentence note from "the editor" that opens the issue.
+   It should feel personal and specific to THIS week - reference 1-2 of the actual top stories by
+   name so it doubles as a preview, not a generic greeting. Casual, warm, like a neighbor giving you
+   the heads up on what's worth knowing this week.
+8. TOP 3 THIS WEEK: choose exactly 3 of the strongest, most genuinely significant items from across
+   ALL categories this week (not necessarily 3 from the same category - aim for variety across
+   community/business/family topics when the week allows it). For each, write a short punchy title
+   (5-8 words) plus a 1-2 sentence summary. CRITICAL: once an item is chosen for top_3, REMOVE it
+   entirely from its regular category array below - it should NOT appear twice in the newsletter.
+   If a week is genuinely thin on strong material, it's fine to choose fewer than 3, but 3 is the
+   target most weeks given the number of sources feeding this newsletter.
+9. CLOSING CTA: write ONE single short sentence encouraging readers to either reply with a tip, or
+   forward the newsletter to a neighbor - pick whichever fits the week better. Only ONE call to
+   action, not multiple competing asks.
 
 Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
 {
+  "editor_note": "...",
+  "top_3": [{"title": "...", "summary": "...", "link": "..."}],
   "community_wins": [{"summary": "...", "link": "..."}],
   "work_business": [{"summary": "...", "link": "..."}],
   "family_kids": [{"summary": "...", "link": "..."}],
@@ -226,7 +265,8 @@ Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
   "health_wellness": [{"summary": "...", "link": "..."}],
   "jobs_work": [{"summary": "...", "link": "..."}],
   "weekend_ideas": ["...", "...", "..."],
-  "savings_tips": [{"summary": "...", "link": "..."}]
+  "savings_tips": [{"summary": "...", "link": "..."}],
+  "closing_cta": "..."
 }
 
 If a category has no genuinely good items this week, return an empty array for it - never
@@ -248,7 +288,44 @@ def curate_with_claude(raw_items):
     )
     text = response.content[0].text.strip()
     text = text.replace("```json", "").replace("```", "").strip()
-    return json.loads(text)
+    curated = json.loads(text)
+    return enforce_editorial_limits(curated)
+
+
+# Categories that get a hard cap as a safety net, in case the model doesn't
+# self-limit per the prompt's instructions. Keeps the newsletter genuinely
+# tight regardless of how much raw material came in that week.
+SECTION_ITEM_CAPS = {
+    "community_wins": 4,
+    "work_business": 4,
+    "family_kids": 4,
+    "day_trip_events": 4,
+    "school_youth": 3,
+    "health_wellness": 3,
+    "jobs_work": 3,
+    "kids_gaming": 3,
+}
+
+
+def enforce_editorial_limits(curated):
+    # Cap each section at its max, keeping the first N (Claude was asked to
+    # put the strongest items first within each category).
+    for key, cap in SECTION_ITEM_CAPS.items():
+        if key in curated and isinstance(curated[key], list) and len(curated[key]) > cap:
+            curated[key] = curated[key][:cap]
+
+    # Safety net: if a top_3 item's summary text also appears verbatim in a
+    # regular section (model failed to remove it as instructed), strip it
+    # from the regular section to avoid an obvious duplicate.
+    top_3_summaries = {item.get("summary", "") for item in curated.get("top_3", [])}
+    for key in SECTION_ITEM_CAPS:
+        if key in curated and isinstance(curated[key], list):
+            curated[key] = [
+                item for item in curated[key]
+                if item.get("summary", "") not in top_3_summaries
+            ]
+
+    return curated
 
 
 # ---------------------------------------------------------------------------
@@ -341,8 +418,76 @@ def render_weekend_ideas(ideas):
 
 
 
+def render_editor_note(note):
+    if not note:
+        return ""
+    return f"""
+    <tr><td style="padding:24px 0 4px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#FBF7EC; border-left:4px solid #D9A441; border-radius:4px;">
+        <tr><td style="padding:18px 22px;">
+          <p style="margin:0 0 4px; font-size:11px; color:#8A5A16; letter-spacing:2px; text-transform:uppercase; font-weight:bold; font-family:'Liberation Sans', Arial, sans-serif;">A note from the editor</p>
+          <p style="margin:0; font-size:14.5px; color:#3D2E12; line-height:1.6; font-style:italic;">{note}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+    """
+
+
+def render_top3(items):
+    if not items:
+        return ""
+    rows = ""
+    numerals = ["1", "2", "3", "4", "5"]
+    for i, item in enumerate(items):
+        link = item.get("link", "")
+        button = f"""<a href="{link}" style="display:inline-block; margin-top:8px; padding:6px 14px; background:#153328; color:#F7F1E3; font-size:12px; font-weight:bold; text-decoration:none; border-radius:20px;">Read more &rarr;</a>""" if link else ""
+        num = numerals[i] if i < len(numerals) else str(i + 1)
+        rows += f"""
+        <tr>
+          <td style="padding:16px 20px; border-bottom:1px solid rgba(217,164,65,0.25); vertical-align:top;">
+            <table cellpadding="0" cellspacing="0"><tr>
+              <td style="width:34px; height:34px; background:#D9A441; border-radius:17px; text-align:center; vertical-align:middle; font-family:Georgia, serif; font-weight:bold; font-size:16px; color:#153328;">{num}</td>
+              <td style="padding-left:14px; vertical-align:middle;">
+                <p style="margin:0; font-size:16px; font-weight:bold; color:#153328; font-family:Georgia, 'Times New Roman', serif;">{item.get('title', '')}</p>
+              </td>
+            </tr></table>
+            <p style="margin:8px 0 0; font-size:14.5px; color:#1B241E; line-height:1.55;">{item.get('summary', '')}</p>
+            {button}
+          </td>
+        </tr>"""
+    return f"""
+    <tr><td style="padding:24px 0 0;">
+      <table cellpadding="0" cellspacing="0"><tr>
+        <td>
+          <p style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:21px; font-weight:bold; color:#153328;">&#9733; Top 3 This Week</p>
+        </td>
+      </tr></table>
+    </td></tr>
+    <tr><td style="padding-top:12px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF2; border:2px solid #D9A441; border-radius:8px; overflow:hidden;">{rows}</table>
+    </td></tr>
+    """
+
+
+def render_closing_cta(cta_text):
+    if not cta_text:
+        return ""
+    return f"""
+    <tr><td style="padding-top:8px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#FBF0EC; border-radius:8px; border:1.5px solid #B4472F;">
+        <tr><td style="padding:20px 24px; text-align:center;">
+          <p style="margin:0; font-size:15px; color:#7A2E1E; font-weight:bold; line-height:1.5;">{cta_text}</p>
+          <p style="margin:6px 0 0; font-size:12px; color:#8A5045;">Just hit reply — a real person reads these.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+    """
+
+
 def build_html(curated):
     date_str = datetime.date.today().strftime("%B %d, %Y")
+    top3 = render_top3(curated.get("top_3", []))
+    editor_note = render_editor_note(curated.get("editor_note", ""))
     sections = (
         render_section("Community Wins", "🌳", curated.get("community_wins", []))
         + render_section("Work & Local Business", "💼", curated.get("work_business", []))
@@ -355,6 +500,7 @@ def build_html(curated):
         + render_section("Money-Saving Tips for Families", "💰", curated.get("savings_tips", []))
     )
     weekend = render_weekend_ideas(curated.get("weekend_ideas", []))
+    closing_cta = render_closing_cta(curated.get("closing_cta", ""))
 
     return f"""<!DOCTYPE html>
 <html><body style="margin:0; padding:0; background:#EFE7D2; font-family:'Trebuchet MS', Verdana, Geneva, sans-serif;">
@@ -383,9 +529,14 @@ def build_html(curated):
 
   <tr><td style="background:#ffffff; padding:8px 32px 20px; border-left:2px solid #D9A441; border-right:2px solid #D9A441;">
     <table width="100%" cellpadding="0" cellspacing="0">
+      {editor_note}
+      {top3}
+      {render_divider() if (editor_note or top3) and sections else ""}
       {sections}
       {render_divider() if sections and weekend else ""}
       {weekend}
+      {render_divider() if weekend and closing_cta else ""}
+      {closing_cta}
     </table>
   </td></tr>
 
@@ -397,8 +548,8 @@ def build_html(curated):
             <p style="margin:0; font-size:11px; color:#D9A441; letter-spacing:2px; text-transform:uppercase; font-weight:bold;">This newsletter is brought to you by</p>
             <p style="margin:8px 0 0;"><a href="https://leanhour.llc" style="color:#F7F1E3; font-weight:bold; font-size:22px; letter-spacing:0.5px; text-decoration:none; font-family:Georgia, 'Times New Roman', serif;">Leanhour</a></p>
             <p style="margin:4px 0 10px; font-size:13px; color:#D9A441; font-weight:bold;">AI Solutions for Home &amp; Business</p>
-            <p style="margin:0 0 14px; font-size:12.5px; color:#CBD8CC; max-width:380px; margin-left:auto; margin-right:auto; line-height:1.5;">Helping Strongsville families and businesses save time and money with smart automation, plus hands-on AI education.</p>
-            <a href="https://leanhour.llc" style="display:inline-block; padding:8px 20px; background:#D9A441; color:#153328; font-size:12px; font-weight:bold; text-decoration:none; border-radius:20px; font-family:'Liberation Sans', Arial, sans-serif;">Visit Leanhour &rarr;</a>
+            <p style="margin:0 0 6px; font-size:12.5px; color:#CBD8CC; max-width:380px; margin-left:auto; margin-right:auto; line-height:1.5;">This newsletter runs on autopilot — literally. It's built and powered by Leanhour, a Strongsville-based AI consulting company, using the same kind of practical automation they help local families and businesses set up every day.</p>
+            <a href="https://leanhour.llc" style="display:inline-block; padding:8px 20px; background:#D9A441; color:#153328; font-size:12px; font-weight:bold; text-decoration:none; border-radius:20px; font-family:'Liberation Sans', Arial, sans-serif; margin-top:8px;">Visit Leanhour &rarr;</a>
           </td></tr>
         </table>
       </td></tr>
