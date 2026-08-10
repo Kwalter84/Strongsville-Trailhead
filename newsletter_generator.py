@@ -138,9 +138,24 @@ for residents of Strongsville, Ohio. The newsletter's entire purpose is to be a 
 positive, uplifting counterpoint to normal local news. Families with young kids are a
 core audience.
 
+TODAY'S DATE IS: {today_date}. This issue is being sent out today, so anything you frame as an
+"upcoming" event needs to actually still be in the future relative to this date.
+
 Below is a list of raw headlines/snippets pulled from news feeds covering Strongsville.
 
 Your job:
+0. CHECK EVENT DATES CAREFULLY. If an item mentions or implies a specific date, day of the week, or
+   time frame (e.g. "this Saturday," "August 2nd," "last weekend"), compare it to today's date above.
+   - If the event has ALREADY HAPPENED as of today: do NOT present it as an upcoming event people
+     should attend. Either EXCLUDE it entirely, OR if it's genuinely noteworthy as a recap (e.g. a
+     fundraiser that raised a lot of money, a big turnout), rewrite it in PAST TENSE as a community
+     win/recap rather than an invitation to attend - and put it in community_wins or school_youth
+     rather than family_kids/day_trip_events, which should be reserved for things people can still
+     go to.
+   - If an item's date is ambiguous or not stated, use the "published" date as a rough guide, and
+     when in doubt, lean toward excluding rather than risk advertising a dead event.
+   - This check matters MOST for family_kids, day_trip_events, jobs_work (job fair dates), and
+     kids_gaming (release dates) - these categories imply "you can still do/attend this."
 1. SELECT items that are genuinely positive, uplifting, constructive, OR simply pleasant/neutral
    local-interest news - for example a new business opening, a completed road or park project, an
    upcoming event, a school achievement, a local sports win. You do NOT need a story to be dramatically
@@ -288,7 +303,9 @@ RAW ITEMS:
 
 def curate_with_claude(raw_items):
     client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    prompt = CURATION_PROMPT.replace("{items_json}", json.dumps(raw_items, indent=2))
+    today_date = datetime.date.today().strftime("%A, %B %d, %Y")
+    prompt = CURATION_PROMPT.replace("{today_date}", today_date)
+    prompt = prompt.replace("{items_json}", json.dumps(raw_items, indent=2))
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
