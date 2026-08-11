@@ -277,7 +277,11 @@ Your job:
 9. Note: the newsletter has a fixed "Forward to a Friend" section at the end that you do NOT need
    to generate - that's handled separately, not part of your output.
 
-Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
+Return ONLY valid JSON (no markdown fences, no preamble) in this exact shape. CRITICAL: this must be
+syntactically valid JSON - if any summary or title needs to reference a quoted name or title (e.g. a
+book called "The Fish House"), use an escaped \\" inside the JSON string, or rephrase to avoid quotes
+entirely (e.g. "a new novel called The Fish House" instead of using quotation marks). Double-check
+every string value is properly quoted and escaped before finishing your response.
 {
   "editor_note": "...",
   "top_3": [{"title": "...", "summary": "...", "link": "..."}],
@@ -307,15 +311,23 @@ def curate_with_claude(raw_items):
     prompt = CURATION_PROMPT.replace("{today_date}", today_date)
     prompt = prompt.replace("{items_json}", json.dumps(raw_items, indent=2))
 
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=16000,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    text = response.content[0].text.strip()
-    text = text.replace("```json", "").replace("```", "").strip()
-    curated = json.loads(text)
-    return enforce_editorial_limits(curated)
+    last_error = None
+    for attempt in range(3):
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=16000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = response.content[0].text.strip()
+        text = text.replace("```json", "").replace("```", "").strip()
+        try:
+            curated = json.loads(text)
+            return enforce_editorial_limits(curated)
+        except json.JSONDecodeError as e:
+            last_error = e
+            print(f"  Curation attempt {attempt + 1} produced invalid JSON ({e}), retrying...")
+
+    raise last_error
 
 
 # Categories that get a hard cap as a safety net, in case the model doesn't
