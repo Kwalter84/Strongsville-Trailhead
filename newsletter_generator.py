@@ -252,6 +252,16 @@ Your job:
       groups), timing purchases around major annual sale events (Prime Day, Black Friday/Cyber
       Monday), diaper/baby-product subscription discounts, cash-back browser extensions, buying
       kids' clothes a size up during off-season clearance.
+      SEASONAL AWARENESS: also consider whether today's date (given above) falls near a well-known
+      recurring seasonal savings moment for families - e.g. state back-to-school sales-tax holidays
+      in late summer, FSA/dependent-care deadlines around year-end, flu shot season in early fall,
+      holiday shopping timing in November/December, spring clearance on winter gear. If one is
+      relevant to the current time of year, you may mention it generally (e.g. "many states run a
+      back-to-school sales-tax holiday in late summer/early fall - worth checking Ohio's exact
+      dates and rules this year"). CRITICAL: do NOT state a specific date, dollar threshold, or
+      percentage for one of these recurring events from memory, since exact rules change year to
+      year and you cannot verify current-year specifics - point the reader to check rather than
+      asserting a number you're not certain is current.
    For (a) real sourced deals: NEVER invent or embellish a discount percentage, expiration date, or
    promo code beyond what the source item actually states - if the source is vague, keep your
    summary equally general rather than inventing precision.
@@ -671,6 +681,103 @@ def send_newsletter(html, subscribers):
 
 
 # ---------------------------------------------------------------------------
+# 6. PUBLIC ARCHIVE (for Facebook posting + browsable past issues)
+# ---------------------------------------------------------------------------
+
+ARCHIVE_DIR = "issues"
+SITE_BASE_URL = "https://profound-monstera-22797f.netlify.app"
+
+
+def save_to_archive(html, curated):
+    """Writes this week's issue as a permanent, publicly-viewable page and
+    regenerates the archive index. Returns the public URL for this issue."""
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
+    date_slug = datetime.date.today().strftime("%Y-%m-%d")
+    filename = f"{date_slug}.html"
+    filepath = os.path.join(ARCHIVE_DIR, filename)
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(html)
+
+    rebuild_archive_index(curated, date_slug)
+
+    public_url = f"{SITE_BASE_URL}/{ARCHIVE_DIR}/{filename}"
+    print(f"  Archived issue at: {public_url}")
+    return public_url
+
+
+def rebuild_archive_index(latest_curated, latest_date_slug):
+    """Scans the issues/ folder for all archived .html files and regenerates
+    a simple browsable index page, newest first."""
+    files = sorted(
+        [f for f in os.listdir(ARCHIVE_DIR) if f.endswith(".html") and f != "index.html"],
+        reverse=True,
+    )
+
+    rows = ""
+    for fname in files:
+        date_str = fname.replace(".html", "")
+        try:
+            pretty_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").strftime("%B %d, %Y")
+        except ValueError:
+            pretty_date = date_str
+        rows += f"""
+        <a href="{fname}" style="display:block; padding:16px 20px; background:#ffffff; border-radius:6px; margin-bottom:10px; text-decoration:none; border:1px solid rgba(21,51,40,0.12);">
+          <p style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:16px; font-weight:bold; color:#153328;">{pretty_date}</p>
+          <p style="margin:4px 0 0; font-size:13px; color:#B4472F;">Read this issue &rarr;</p>
+        </a>"""
+
+    index_html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Past Issues — The Strongsville Trailhead</title></head>
+<body style="margin:0; padding:0; background:#EFE7D2; font-family:'Trebuchet MS', Verdana, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px;">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%;">
+  <tr><td style="background:#153328; padding:32px; text-align:center; border-radius:8px 8px 0 0;">
+    <p style="margin:0; color:#D9A441; font-size:28px; font-weight:bold; font-family:Georgia, serif;">Past Issues</p>
+    <p style="margin:6px 0 0; color:#CBD8CC; font-size:13px;">The Strongsville Trailhead archive</p>
+  </td></tr>
+  <tr><td style="padding:24px;">{rows}</td></tr>
+</table>
+</td></tr></table>
+</body></html>"""
+
+    with open(os.path.join(ARCHIVE_DIR, "index.html"), "w", encoding="utf-8") as f:
+        f.write(index_html)
+
+
+# ---------------------------------------------------------------------------
+# 7. FACEBOOK AUTO-POST
+# ---------------------------------------------------------------------------
+
+def post_to_facebook(archive_url, editor_note):
+    page_id = os.environ.get("FB_PAGE_ID", "").strip()
+    access_token = os.environ.get("FB_PAGE_ACCESS_TOKEN", "").strip()
+
+    if not page_id or not access_token:
+        print("  FB_PAGE_ID or FB_PAGE_ACCESS_TOKEN not set - skipping Facebook post.")
+        return
+
+    message = editor_note.strip() if editor_note else "This week's issue of The Strongsville Trailhead is here!"
+    message += "\n\nRead the full issue and see everything happening in Strongsville this week:"
+
+    resp = requests.post(
+        f"https://graph.facebook.com/v20.0/{page_id}/feed",
+        data={
+            "message": message,
+            "link": archive_url,
+            "access_token": access_token,
+        },
+        timeout=30,
+    )
+    print(f"  Facebook post response: {resp.status_code}")
+    if resp.status_code >= 300:
+        print(f"  Facebook post FAILED (non-fatal, newsletter send already succeeded): {resp.text}")
+    else:
+        print("  Posted to Facebook Page successfully.")
+
+
+# ---------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------
 
@@ -707,9 +814,29 @@ def main():
 
     print("Sending...")
     send_newsletter(html, subscribers)
+
+    if test_email:
+        print("  TEST MODE: skipping archive + Facebook post (only happens on real sends).")
+    else:
+        print("Archiving issue...")
+        archive_url = save_to_archive(html, curated)
+
+        print("Posting to Facebook...")
+        post_to_facebook(archive_url, curated.get("editor_note", ""))
+
+        # Always print ready-to-copy post text, whether or not auto-posting is configured -
+        # handy for manual posting to Facebook or anywhere else.
+        note = curated.get("editor_note", "").strip()
+        suggested_post = (note or "This week's issue of The Strongsville Trailhead is here!")
+        suggested_post += "\n\nRead the full issue and see everything happening in Strongsville this week:\n" + archive_url
+        print("\n" + "=" * 60)
+        print("READY-TO-COPY POST TEXT (for manual posting anywhere):")
+        print("=" * 60)
+        print(suggested_post)
+        print("=" * 60 + "\n")
+
     print("Done.")
 
 
 if __name__ == "__main__":
     main()
-
