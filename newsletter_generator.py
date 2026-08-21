@@ -221,20 +221,49 @@ Your job:
    tip text is vague, still summarize only what's actually stated; don't invent details.
    For "day_trip_events", briefly note roughly how far/what area it's in.
    For "kids_gaming", briefly note the platform and why it's good for kids (age range if known).
-4. Also write 2-3 short original "Weekend Ideas for Young Families" suggestions —
-   general, evergreen ideas for family activities in Strongsville
-   (e.g. Cleveland Metroparks Mill Stream Run Reservation trails, SouthPark Mall play areas,
-   Strongsville branch library storytimes, Ehrnfelt Recreation Center, local splash pads/parks)
-   appropriate for the current season. These should NOT be copied from any source - write
-   them yourself as genuinely useful local suggestions.
+4. Write 2-3 original "Weekend Ideas for Young Families" suggestions - genuinely useful, specific
+   ideas for family activities in and around Strongsville, appropriate for the current season
+   (today's date is given above).
+   AVOID REPETITION: this newsletter goes out weekly, so do NOT default to the same handful of
+   go-to suggestions every time (e.g. always picking the same park, the same library program, the
+   same rec center activity). Actively VARY your picks week to week. Draw from a WIDE pool -
+   rotate through different ones rather than always leading with your favorite:
+   - Parks/outdoors: Cleveland Metroparks Mill Stream Run Reservation (trails, disc golf, nature
+     center), Cascade Park, Duck Pond Park, Cascade Valley area, Tree City walking paths,
+     Poppy Hill Park, Boulder Farm Park, Strongsville's various neighborhood parks
+   - Library (Cuyahoga County Public Library, Strongsville branch): storytimes (note they vary by
+     age group and day), maker space/craft programs, teen events, seasonal reading programs,
+     museum-pass lending, computer/tech help sessions
+   - Rec/recreation: Ehrnfelt Recreation Center (pool, gym, classes), youth sports leagues,
+     seasonal rec department programs
+   - Retail/indoor: SouthPark Mall play areas and seasonal events, indoor play spaces
+   - Seasonal/rotating: splash pads (summer), local sledding hills (winter), fall festivals/corn
+     mazes at area farms, holiday light displays, spring nature walks, seasonal farmers markets
+   - Food/small outings: a locally-owned family-friendly restaurant or ice cream spot, a coffee
+     shop with a kids' area
+   Pick 2-3 DIFFERENT ones each time based on what fits the current season best - do not write
+   generic filler; be specific about what makes each one worth doing right now. These should NOT
+   be copied from any source - write them yourself as genuinely useful local suggestions.
 5. For "health_wellness": first check if there are genuine local health items (hospital programs,
    vaccine clinics, health department news) among the raw items - use those if present. If there
-   are none this week, write 2-3 general, evergreen, seasonally-appropriate wellness tips YOURSELF
-   (e.g. hydration and sun safety in summer, flu shot reminders in fall, cold/flu prevention basics
-   in winter, seasonal allergy tips in spring). Keep these general and non-medical - practical
-   everyday wellness reminders, NOT specific medical, dosage, or treatment advice. Always include
-   a brief note that readers should consult their own doctor for personal health questions. This
-   category should always have at least 2 items, generated if nothing local is available.
+   are none this week, write 2-3 wellness tips YOURSELF, seasonally appropriate for today's date.
+   AVOID REPETITION: rotate through a WIDE range of topics rather than always defaulting to the
+   same 2-3 (e.g. don't just always say "stay hydrated" every summer week). Draw from a broad pool
+   and vary your picks:
+   - Summer: hydration/heat safety, sun protection, tick/Lyme disease awareness for wooded trail
+     areas, swimming/water safety, seasonal allergy management, bike helmet safety
+   - Fall: flu shot timing, back-to-school illness prevention (handwashing, sleep routines), cold
+     weather layering for outdoor sports, seasonal depression awareness as days shorten
+   - Winter: cold/flu prevention, winter driving safety, dry skin/humidity tips, holiday stress and
+     mental health, indoor air quality, ice/snow fall-prevention for kids and elderly relatives
+   - Spring: seasonal allergies, tick season starting, mental health/getting outside more,
+     bike/scooter safety as kids get back outside, sunscreen reminders starting early
+   - Year-round rotating topics: mental health awareness, dental health reminders, screen-time and
+     sleep hygiene for kids, general preventive care/checkup reminders, car seat safety checks
+   Keep these general and non-medical - practical everyday wellness reminders, NOT specific
+   medical, dosage, or treatment advice. Always include a brief note that readers should consult
+   their own doctor for personal health questions. This category should always have at least 2
+   items, generated if nothing local is available.
 6. Write 3-4 "Money-Saving Tips for Families" - a MIX prioritized in this order:
    a) FIRST PRIORITY - REAL sourced deals: check the raw items for genuine current sales, discounts,
       or promotions on kids'/family items - local Strongsville-area retailers, regional (Greater
