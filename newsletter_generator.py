@@ -913,8 +913,11 @@ def main():
         print(f"  TEST MODE: overriding recipient list - sending ONLY to {test_email} (not the real {len(subscribers)} subscribers)")
         subscribers = [test_email]
 
-    print("Sending...")
-    send_newsletter(html, subscribers)
+    if os.environ.get("DRY_RUN", "").strip():
+        print("DRY RUN: skipping the send. latest_issue.html is built and ready to mail by hand.")
+    else:
+        print("Sending...")
+        send_newsletter(html, subscribers)
 
     if test_email:
         print("  TEST MODE: skipping archive + Facebook post (only happens on real sends).")
