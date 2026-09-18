@@ -24,6 +24,11 @@ import datetime
 import feedparser
 import requests
 from anthropic import Anthropic
+from pathlib import Path
+
+def sports_section():
+    f = Path(__file__).parent / "sports" / "dist" / "sports_section.html"
+    return f.read_text(encoding="utf-8") if f.exists() else ""
 
 # ---------------------------------------------------------------------------
 # 1. SOURCES
