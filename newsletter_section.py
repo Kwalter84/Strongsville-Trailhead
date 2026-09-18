@@ -147,6 +147,7 @@ def main():
         "finals": [{"team": label(e), "opponent": e["opponent"], **e["score"], "date": e["date"]} for e in finals],
         "upcoming": [{"team": label(e), "opponent": e["opponent"], "home": e["home"],
                       "date": e["date"], "time": e["time"], "location": e["location"]} for e in upcoming],
+        "extra": extra,
         "highlight": hl,
     }, indent=1), encoding="utf-8")
     print(text)
