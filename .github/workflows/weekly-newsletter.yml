@@ -30,7 +30,11 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
+        
+      - name: Build sports section
+        working-directory: sports
+        run: python newsletter_section.py
+        
       - name: Generate and send newsletter
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
