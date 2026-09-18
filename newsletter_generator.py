@@ -26,9 +26,6 @@ import requests
 from anthropic import Anthropic
 from pathlib import Path
 
-def sports_section():
-    f = Path(__file__).parent / "sports" / "dist" / "sports_section.html"
-    return f.read_text(encoding="utf-8") if f.exists() else ""
 
 # ---------------------------------------------------------------------------
 # 1. SOURCES
@@ -551,6 +548,73 @@ def render_top3(items):
     """
 
 
+def render_sports():
+    """Weekly Mustangs block, built from sports/dist/sports_section.json."""
+    path = Path(__file__).parent / "sports" / "dist" / "sports_section.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return ""
+    finals = data.get("finals", [])
+    upcoming = data.get("upcoming", [])
+    if not finals and not upcoming:
+        return ""
+
+    accent, tint, gold = "#153328", "#F7F1E3", "#D9A441"
+    rows = ""
+
+    if finals:
+        lines = ""
+        for f in finals:
+            verb = {"W": "beat", "L": "lost to", "T": "tied"}.get(f.get("result"), "played")
+            day = datetime.date.fromisoformat(f["date"]).strftime("%A")
+            lines += (f"""<p style="margin:0 0 6px; font-size:15px; color:#1B241E; line-height:1.55;">"""
+                      f"""<b>{f['team'].capitalize()}</b> {verb} {f['opponent']} """
+                      f"""<b style="color:{accent};">{f['us']}-{f['them']}</b> on {day}.</p>""")
+        rows += f"""
+        <tr><td style="padding:16px 20px; border-bottom:1px solid rgba(21,51,40,0.08);">
+          <p style="margin:0 0 8px; font-size:12px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:{accent};">Last week&rsquo;s finals</p>
+          {lines}
+        </td></tr>"""
+
+    if upcoming:
+        games = ""
+        for g in upcoming:
+            d = datetime.date.fromisoformat(g["date"]).strftime("%a %b %-d")
+            when = f"{d} &middot; {g['time']}" if g.get("time") else f"{d} &middot; Time TBA"
+            matchup = ("vs " if g["home"] else "at ") + g["opponent"]
+            tag = (f"""<span style="background:{gold}; color:#2A1B00; font-size:11px; font-weight:bold; padding:2px 7px; border-radius:10px; margin-left:6px;">HOME</span>"""
+                   if g["home"] else "")
+            games += (f"""<tr>
+              <td style="padding:5px 0; font-size:13px; color:#4A5B50; white-space:nowrap; vertical-align:top; width:118px; padding-right:12px;">{when}</td>
+              <td style="padding:5px 0; font-size:14.5px; color:#1B241E; line-height:1.45;">{g['team']}<br><b>{matchup}</b>{tag}</td>
+            </tr>""")
+        extra = data.get("extra", 0)
+        more = (f"""<p style="margin:10px 0 0; font-size:13px; color:#4A5B50;">Plus {extra} more varsity events later in the week.</p>"""
+                if extra else "")
+        rows += f"""
+        <tr><td style="padding:16px 20px;">
+          <p style="margin:0 0 8px; font-size:12px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:{accent};">This week</p>
+          <table width="100%" cellpadding="0" cellspacing="0">{games}</table>
+          {more}
+          <p style="margin:12px 0 0; font-size:12.5px; color:#4A5B50; line-height:1.5;">Full schedules for every team, including middle school, are in the Strongsville Athletics app and at <a href="https://www.strongsvillemustangs.org/calendar" style="color:{accent};">strongsvillemustangs.org</a>.</p>
+        </td></tr>"""
+
+    return f"""
+    <tr><td style="padding:28px 0 0;">
+      <table cellpadding="0" cellspacing="0"><tr>
+        <td style="width:38px; height:38px; background:#ffffff; border:2px solid {accent}; border-radius:19px; text-align:center; vertical-align:middle; font-size:17px;">🏟️</td>
+        <td style="padding-left:12px; vertical-align:middle;">
+          <p style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:{accent};">Mustangs Sports</p>
+        </td>
+      </tr></table>
+    </td></tr>
+    <tr><td style="padding-top:12px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:{tint}; border-radius:8px; border-left:4px solid {accent}; overflow:hidden;">{rows}</table>
+    </td></tr>
+    """
+
+
 def render_forward_section():
     signup_url = "https://profound-monstera-22797f.netlify.app/signup.html"
     return f"""
@@ -583,6 +647,7 @@ def build_html(curated):
         + render_section("Money-Saving Tips for Families", "💰", curated.get("savings_tips", []))
     )
     weekend = render_weekend_ideas(curated.get("weekend_ideas", []))
+    sports = render_sports()
     forward_section = render_forward_section()
 
     return f"""<!DOCTYPE html>
@@ -616,7 +681,9 @@ def build_html(curated):
       {top3}
       {render_divider() if (editor_note or top3) and sections else ""}
       {sections}
-      {render_divider() if sections and weekend else ""}
+      {render_divider() if sections and sports else ""}
+      {sports}
+      {render_divider() if (sections or sports) and weekend else ""}
       {weekend}
       {render_divider() if weekend else ""}
       {forward_section}
