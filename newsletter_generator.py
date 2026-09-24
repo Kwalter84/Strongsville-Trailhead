@@ -7,12 +7,12 @@ Run weekly (via GitHub Actions cron). This script:
      family-and-kids-relevant items, and to sort them into sections
   3. Renders a branded HTML email
   4. Fetches the subscriber list from the Google Apps Script backend
-  5. Sends the issue via SendGrid
+  5. Sends the issue via Brevo
 
 Required environment variables (set as GitHub Actions secrets):
   ANTHROPIC_API_KEY   - Claude API key
-  SENDGRID_API_KEY    - SendGrid API key
-  SENDER_EMAIL        - verified SendGrid sender address, e.g. news@yourdomain.com
+  BREVO_API_KEY       - Brevo API key (SMTP & API > API Keys)
+  SENDER_EMAIL        - verified Brevo sender address, e.g. news@yourdomain.com
   APPS_SCRIPT_URL      - your deployed Google Apps Script Web App URL
   APPS_SCRIPT_SECRET   - the SECRET_KEY you set in Code.gs
 """
@@ -749,36 +749,51 @@ def get_subscribers():
 
 
 # ---------------------------------------------------------------------------
-# 5. SEND VIA SENDGRID
+# 5. SEND VIA BREVO
 # ---------------------------------------------------------------------------
 
 def send_newsletter(html, subscribers):
-    api_key = os.environ["SENDGRID_API_KEY"]
+    """Send the issue through Brevo (api.brevo.com/v3/smtp/email).
+
+    messageVersions gives each subscriber their own copy - nobody sees anyone
+    else's address - while keeping this to one API call per batch.
+    Free plan: 300 emails/day, max 1000 versions per call.
+    """
+    api_key = os.environ["BREVO_API_KEY"]
     sender = os.environ["SENDER_EMAIL"]
-    subject = f"The Strongsville Trailhead — {datetime.date.today().strftime('%B %d, %Y')}"
+    subject = f"The Strongsville Trailhead \u2014 {datetime.date.today().strftime('%B %d, %Y')}"
 
     if not subscribers:
-        print("No subscribers yet — skipping send.")
+        print("No subscribers yet - skipping send.")
         return
 
-    payload = {
-        "personalizations": [{"to": [{"email": email}]} for email in subscribers],
-        "from": {"email": sender, "name": "The Strongsville Trailhead"},
-        "subject": subject,
-        "content": [{"type": "text/html", "value": html}],
-    }
-    # SendGrid personalizations each get their own "to" but share subject/content,
-    # which keeps this simple and avoids exposing subscriber emails to each other.
-    resp = requests.post(
-        "https://api.sendgrid.com/v3/mail/send",
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        json=payload,
-        timeout=30,
-    )
-    print(f"SendGrid response: {resp.status_code}")
-    if resp.status_code >= 300:
-        print(resp.text)
-        resp.raise_for_status()
+    BATCH = 500
+    sent = 0
+    for i in range(0, len(subscribers), BATCH):
+        batch = subscribers[i:i + BATCH]
+        payload = {
+            "sender": {"email": sender, "name": "The Strongsville Trailhead"},
+            "subject": subject,
+            "htmlContent": html,
+            "messageVersions": [{"to": [{"email": email}]} for email in batch],
+        }
+        resp = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": api_key,
+                "content-type": "application/json",
+                "accept": "application/json",
+            },
+            json=payload,
+            timeout=60,
+        )
+        print(f"Brevo response: {resp.status_code} ({len(batch)} recipients)")
+        if resp.status_code >= 300:
+            print(resp.text)
+            resp.raise_for_status()
+        sent += len(batch)
+
+    print(f"Sent to {sent} subscribers.")
 
 
 # ---------------------------------------------------------------------------
@@ -904,18 +919,22 @@ def main():
     with open("latest_issue.html", "w") as f:
         f.write(html)
 
-    print("Fetching subscriber list...")
-    subscribers = get_subscribers()
-    print(f"  {len(subscribers)} subscribers")
-
     test_email = os.environ.get("TEST_EMAIL", "").strip()
-    if test_email:
-        print(f"  TEST MODE: overriding recipient list - sending ONLY to {test_email} (not the real {len(subscribers)} subscribers)")
-        subscribers = [test_email]
 
     if os.environ.get("DRY_RUN", "").strip():
-        print("DRY RUN: skipping the send. latest_issue.html is built and ready to mail by hand.")
+        # Nothing is sent, so don't touch Apps Script at all - that call has been
+        # timing out, and it shouldn't be able to block a build-only run.
+        print("DRY RUN: skipping the subscriber fetch and the send.")
+        print("  latest_issue.html is built and ready to mail by hand.")
     else:
+        print("Fetching subscriber list...")
+        subscribers = get_subscribers()
+        print(f"  {len(subscribers)} subscribers")
+
+        if test_email:
+            print(f"  TEST MODE: overriding recipient list - sending ONLY to {test_email} (not the real {len(subscribers)} subscribers)")
+            subscribers = [test_email]
+
         print("Sending...")
         send_newsletter(html, subscribers)
 
