@@ -37,9 +37,9 @@ jobs:
         
       - name: Generate and send newsletter
         env:
-          DRY_RUN: "1"   # set to "" (empty) to resume real sending once SendGrid is back
+          DRY_RUN: ""    # set to "1" to build the issue without sending
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
           APPS_SCRIPT_SECRET: ${{ secrets.APPS_SCRIPT_SECRET }}
