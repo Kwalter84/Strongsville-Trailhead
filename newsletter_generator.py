@@ -761,6 +761,9 @@ def send_newsletter(html, subscribers):
     """
     api_key = os.environ["BREVO_API_KEY"]
     sender = os.environ["SENDER_EMAIL"]
+    # Replies go wherever REPLY_TO points (your Gmail), even once the From
+    # address moves to the strongsvilletrailhead.com domain.
+    reply_to = os.environ.get("REPLY_TO", "").strip()
     subject = f"The Strongsville Trailhead \u2014 {datetime.date.today().strftime('%B %d, %Y')}"
 
     if not subscribers:
@@ -777,6 +780,8 @@ def send_newsletter(html, subscribers):
             "htmlContent": html,
             "messageVersions": [{"to": [{"email": email}]} for email in batch],
         }
+        if reply_to:
+            payload["replyTo"] = {"email": reply_to}
         resp = requests.post(
             "https://api.brevo.com/v3/smtp/email",
             headers={
