@@ -82,12 +82,38 @@ FEED_HINTS = {
 }
 
 
+FEED_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+           "(KHTML, like Gecko) Chrome/125.0 Safari/537.36")
+
+
+def fetch_feed(url):
+    """Fetch one feed with a browser user agent.
+
+    feedparser on its own sends no user agent, so Google News quietly returns
+    nothing when a run looks automated - which shows up as 0 items with no error.
+    """
+    try:
+        resp = requests.get(url, headers={"User-Agent": FEED_UA}, timeout=30)
+        if resp.status_code != 200:
+            print(f"  Feed returned HTTP {resp.status_code}: {url[:80]}")
+            return []
+        feed = feedparser.parse(resp.content)
+        return feed.entries
+    except requests.exceptions.RequestException as e:
+        print(f"  Feed failed ({type(e).__name__}): {url[:80]}")
+        return []
+
+
 def fetch_raw_items():
     items = []
     seen_links = set()
+    empty_feeds = 0
     for idx, url in enumerate(RSS_SOURCES):
-        feed = feedparser.parse(url)
-        for entry in feed.entries:
+        entries = fetch_feed(url)
+        if not entries:
+            empty_feeds += 1
+        time.sleep(1)  # be polite; back-to-back requests get throttled
+        for entry in entries:
             link = entry.get("link", "")
             if link in seen_links:
                 continue
@@ -100,6 +126,7 @@ def fetch_raw_items():
                 "source": "rss",
                 "feed_hint": FEED_HINTS.get(idx, ""),
             })
+    print(f"  {empty_feeds} of {len(RSS_SOURCES)} feeds returned nothing")
     return items[:MAX_ITEMS_TO_SEND_TO_CLAUDE]
 
 
@@ -367,6 +394,7 @@ def curate_with_claude(raw_items):
         except json.JSONDecodeError as e:
             last_error = e
             print(f"  Curation attempt {attempt + 1} produced invalid JSON ({e}), retrying...")
+            print(f"  Model returned {len(text)} characters. First 300: {text[:300]!r}")
 
     raise last_error
 
@@ -914,6 +942,13 @@ def main():
     raw_items += tips
 
     print("Curating with Claude...")
+    if not raw_items:
+        raise RuntimeError(
+            "No items pulled from any feed, so there is nothing to curate. "
+            "This is usually Google News throttling repeated runs - wait an hour "
+            "and try again."
+        )
+
     curated = curate_with_claude(raw_items)
     total = sum(len(v) for k, v in curated.items() if k != "weekend_ideas")
     print(f"  {total} items selected as genuinely positive")
