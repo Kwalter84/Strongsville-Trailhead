@@ -690,26 +690,11 @@ def build_html(curated):
     </table>
   </td></tr>
 
-  <tr><td style="padding:20px 32px 0; border-left:2px solid #D9A441; border-right:2px solid #D9A441;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e7e0cf; padding-top:20px;">
-      <tr><td>
-        <table width="100%" cellpadding="0" cellspacing="0" style="background:#153328; border-radius:8px; border:1.5px solid #D9A441;">
-          <tr><td style="padding:20px 24px; text-align:center;">
-            <p style="margin:0; font-size:11px; color:#D9A441; letter-spacing:2px; text-transform:uppercase; font-weight:bold;">This newsletter is brought to you by</p>
-            <p style="margin:8px 0 0;"><a href="https://leanhour.llc" style="color:#F7F1E3; font-weight:bold; font-size:22px; letter-spacing:0.5px; text-decoration:none; font-family:Georgia, 'Times New Roman', serif;">Leanhour</a></p>
-            <p style="margin:4px 0 10px; font-size:13px; color:#D9A441; font-weight:bold;">AI Solutions for Home &amp; Business</p>
-            <p style="margin:0 0 6px; font-size:12.5px; color:#CBD8CC; max-width:380px; margin-left:auto; margin-right:auto; line-height:1.5;">This newsletter runs on autopilot — literally. It's built and powered by Leanhour, a Strongsville-based AI consulting company, using the same kind of practical automation they help local families and businesses set up every day.</p>
-            <a href="https://leanhour.llc" style="display:inline-block; padding:8px 20px; background:#D9A441; color:#153328; font-size:12px; font-weight:bold; text-decoration:none; border-radius:20px; font-family:'Liberation Sans', Arial, sans-serif; margin-top:8px;">Visit Leanhour &rarr;</a>
-          </td></tr>
-        </table>
-      </td></tr>
-    </table>
-  </td></tr>
-
   <tr><td style="padding:16px 32px 24px; text-align:center; color:#9aa39c; font-size:11px; border:2px solid #D9A441; border-top:none; border-radius:0 0 8px 8px;">
     Made for neighbors, by neighbors, in Strongsville, OH.<br>
     Questions or feedback? Email us at <a href="mailto:strongsvilletrailhead@gmail.com" style="color:#9aa39c; text-decoration:underline;">strongsvilletrailhead@gmail.com</a><br>
-    You're getting this because you signed up at the Trailhead. Reply to unsubscribe.
+    You're getting this because you signed up at the Trailhead.
+    <a href="mailto:strongsvilletrailhead@gmail.com?subject=Unsubscribe" style="color:#9aa39c; text-decoration:underline;">Unsubscribe</a> any time.
   </td></tr>
 
 </table>
@@ -782,6 +767,11 @@ def send_newsletter(html, subscribers):
         }
         if reply_to:
             payload["replyTo"] = {"email": reply_to}
+        # Spam filters look for a machine-readable unsubscribe route. Gmail and
+        # Outlook surface this as their own "Unsubscribe" link next to the sender.
+        unsub = os.environ.get("UNSUBSCRIBE_EMAIL", reply_to).strip()
+        if unsub:
+            payload["headers"] = {"List-Unsubscribe": f"<mailto:{unsub}?subject=Unsubscribe>"}
         resp = requests.post(
             "https://api.brevo.com/v3/smtp/email",
             headers={
