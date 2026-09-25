@@ -111,7 +111,7 @@ def fetch_reader_tips():
     key = os.environ["APPS_SCRIPT_SECRET"]
     headers = {"User-Agent": "Mozilla/5.0 (compatible; StrongsvilleTrailhead/1.0)"}
     try:
-        resp = requests.get(url, params={"key": key, "type": "tips"}, headers=headers, timeout=30, allow_redirects=True)
+        resp = requests.get(url, params={"key": key, "type": "tips"}, headers=headers, timeout=90, allow_redirects=True)
         data = resp.json()
         if not data.get("success"):
             print(f"  Warning: could not fetch tips ({data})")
@@ -713,22 +713,33 @@ def get_subscribers():
     headers = {"User-Agent": "Mozilla/5.0 (compatible; StrongsvilleTrailhead/1.0)"}
 
     last_error = None
-    for attempt in range(3):
-        resp = requests.get(url, params={"key": key}, headers=headers, timeout=30, allow_redirects=True)
-        print(f"  Subscriber fetch attempt {attempt + 1} status code: {resp.status_code}")
+    # Apps Script is often cold and can take well over 30s to answer the first
+    # call. Timeouts are raised by requests.get itself, so the request has to sit
+    # INSIDE the try or a slow start kills the whole run on attempt one.
+    for attempt, timeout in enumerate((90, 120, 120), start=1):
         try:
+            resp = requests.get(url, params={"key": key}, headers=headers,
+                                timeout=timeout, allow_redirects=True)
+            print(f"  Subscriber fetch attempt {attempt} status code: {resp.status_code}")
             data = resp.json()
             if data.get("success"):
                 return data["emails"]
             last_error = RuntimeError(f"Failed to fetch subscribers: {data}")
+        except requests.exceptions.Timeout as e:
+            print(f"  Attempt {attempt} timed out after {timeout}s (Apps Script waking up).")
+            last_error = e
+        except requests.exceptions.RequestException as e:
+            print(f"  Attempt {attempt} failed to connect: {e}")
+            last_error = e
         except requests.exceptions.JSONDecodeError:
             print("  Response was not valid JSON. First 300 chars:")
             print(resp.text[:300])
             last_error = RuntimeError("Apps Script returned non-JSON response")
 
-        if attempt < 2:
-            print("  Retrying in 5 seconds...")
-            time.sleep(5)
+        if attempt < 3:
+            wait = attempt * 15
+            print(f"  Retrying in {wait} seconds...")
+            time.sleep(wait)
 
     raise last_error
 
